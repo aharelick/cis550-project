@@ -7,11 +7,12 @@ The final project for CIS550 (Database and Information Systems) at the Universit
 
 ## Running the Web Interface
 - Clone/download the project
-- `cd` into the root folder of the project
+- `cd` into the `nessie` folder just inside the root of the project
 ```zsh
-$ cd nessie
 $ npm install
+$ npm start
 ```
+- Navigate to `localhost:3000` in a browser
 
 
 ## Contributers
