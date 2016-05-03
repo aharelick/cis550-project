@@ -24,19 +24,16 @@ var app = express();
 var config;
 if (app.get('env') === 'development') {
   config = require('./config/config');
+  aws.config.update({
+    accessKeyId: config.AWS_ACCESS_KEY_ID,
+    secretAccessKey: config.AWS_SECRET_ACCESS_KEY
+  });
 } else {
   config = {
     MONGODB_URI: process.env.MONGODB_URI,
     SESSION_SECRET: process.env.SESSION_SECRET,
-    AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY,
-    AWS_SECRET_KEY: process.env.AWS_SECRET_KEY
   }
 }
-
-aws.config.update({
-  accessKeyId: config.AWS_ACCESS_KEY,
-  secretAccessKey: config.AWS_SECRET_KEY
-});
 
 /**
  * Connect to MongoDB.
