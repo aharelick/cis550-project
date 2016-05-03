@@ -9,9 +9,11 @@ var mongoose = require('mongoose');
 var MongoStore = require('connect-mongo')(session);
 var flash = require('connect-flash');
 var expressValidator = require('express-validator');
+var aws = require('aws-sdk');
 require('./config/pass')(passport);
 
-var routes = require('./routes/index');
+var unauthenticatedRoutes = require('./routes/unauthenticated');
+var userRoutes = require('./routes/user');
 
 var app = express();
 
@@ -25,9 +27,16 @@ if (app.get('env') === 'development') {
 } else {
   config = {
     MONGODB_URI: process.env.MONGODB_URI,
-    SESSION_SECRET: process.env.SESSION_SECRET
+    SESSION_SECRET: process.env.SESSION_SECRET,
+    AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY,
+    AWS_SECRET_KEY: process.env.AWS_SECRET_KEY
   }
 }
+
+aws.config.update({
+  accessKeyId: config.AWS_ACCESS_KEY,
+  secretAccessKey: config.AWS_SECRET_KEY
+});
 
 /**
  * Connect to MongoDB.
@@ -62,18 +71,27 @@ app.use(passport.session());
 app.use(flash());
 
 app.use(function(req, res, next) {
+  var form_errors = req.flash('form-errors');
   res.locals.messages = {
     success: req.flash('success'),
     errors: req.flash('errors'),
-    form_errors: req.flash('form-errors'),
-    form_errors_bool: req.flash('form-errors').length !== 0
+    form_errors: form_errors,
+    form_errors_bool: form_errors.length !== 0
   };
   next();
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', routes);
+var isAuthenticated = function(req, res, next) {
+  if (!req.isAuthenticated()) {
+    return res.redirect('/login');
+  }
+  return next();
+}
+
+app.use('/', unauthenticatedRoutes);
+app.use('/user', isAuthenticated, userRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <% include ./partials/head %>
+  <style>
+    main .ui.container {
+      margin-top: 50px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <% include ./partials/header %>
+  </header>
+
+  <main>
+    <div class="ui container">
+      <h1 class="ui header">Upload Files</h1>
+      <div class="ui form">
+        <div class="field">
+          <input id="file_input" class="ui input" type="file" name="file-input">
+        </div>
+        <div class="field">
+          <div class="ui checked checkbox">
+            <input type="checkbox" name="public">
+            <label>Public</label>
+          </div>
+        </div>
+        <button class="ui button" action="submit">Submit Data File</button>
+      </div>
+      <div class="ui teal progress" id="progress">
+        <div class="bar">
+          <div class="progress"></div>
+        </div>
+      </div>
+      <h1 class="ui header">My Uploads</h1>
+      <table id="upload-table" class="ui table">
+        <thead>
+          <tr>
+            <th>Uploaded File</th>
+            <th>Status</th>
+            <th>My Results</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    var getUploads = function () {
+      $.ajax({
+        url: '/user/get-uploads',
+        type: 'GET',
+        success: function(data, textStatus, jqXHR) {
+          console.log(data);
+          $('#upload-table tbody').empty();
+          $.each(data, function(index, upload) {
+            $('#upload-table tbody').prepend('<tr><td>' + upload.name + '</td><td class="negative">' + upload.status + '</td><td>N/A</td></tr>')
+          });
+        },
+        error: function(jqXHR, textStatus, err) {
+          console.log(err);
+        }
+      });
+    }
+
+    var createUpload = function(file, callback) {
+
+    }
+
+    var getSignedRequestAndUpload = function(file) {
+      $.ajax({
+        url: '/user/sign-s3',
+        type: 'GET',
+        data: { name: file.name, type: file.type },
+        success: function(data, textStatus, jqXHR) {
+          uploadFile(file, data);
+        },
+        error: function(jqXHR, textStatus, err) {
+          console.log(err);
+        }
+      });
+    }
+
+    var uploadFile = function(file, uploadData) {
+      getUploads();
+      $('#progress').progress({ percent: 0 });
+      var xhr = new XMLHttpRequest();
+      xhr.open("PUT", uploadData.signed_request);
+      xhr.upload.onprogress = function(event) {
+        if (event.lengthComputable) {
+          console.log(Math.round((event.loaded / event.total) * 100));
+          $('#progress').progress({ percent: Math.round((event.loaded / event.total) * 100) });
+        }
+      };
+      xhr.addEventListener("load", function(event) {
+        console.log('upload complete');
+        console.log(uploadData.url);
+        $.ajax({
+          url: '/user/update-upload',
+          type: 'POST',
+          data: { id: uploadData.upload_id, status: 'Queued' },
+          success: function(data, textStatus, jqXHR) {
+            console.log('updated status!');
+            getUploads();
+          },
+          error: function(jqXHR, textStatus, err) {
+            console.log(err);
+          }
+        });
+      });
+      xhr.addEventListener("error", function(event) {
+        console.log('upload error');
+      });
+      xhr.addEventListener("abort", function(event) {
+        console.log('upload aborted');
+      });
+      xhr.send(file);
+    }
+
+    $('.ui.form button').click(function() {
+      var file = $('.ui.form input[name="file-input"]')[0].files[0];
+      if (!file) {
+        console.log('no file selected');
+      } else {
+        getSignedRequestAndUpload(file);
+      }
+    });
+    $('#progress').progress({ percent: 0 });
+    $('.ui.dropdown').dropdown();
+
+    getUploads();
+  </script>
+</body>
+</html>

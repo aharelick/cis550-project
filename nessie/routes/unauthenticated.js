@@ -56,20 +56,24 @@ router.post('/signup', function(req, res, next) {
     password: req.body.password
   });
 
-  // TODO: lowercase email?
   User.findOne({ email: req.body.email.toLowerCase() }, function(err, existingUser) {
     if (existingUser) {
-      req.flash('form-errors', 'Account with that email address already exists.');
+      req.flash('errors', 'Account with that email address already exists.');
       return res.redirect('/signup');
     }
     user.save(function(err) {
       if (err) return next(err);
       req.login(user, function(err) {
         if (err) return next(err);
-        return res.redirect('/dashboard');
+        return res.redirect('/user/dashboard');
       });
     });
   });
+});
+
+router.get('/logout', function(req, res) {
+  req.logout();
+  return res.redirect('/login');
 });
 
 module.exports = router;
