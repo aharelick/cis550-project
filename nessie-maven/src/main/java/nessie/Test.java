@@ -28,7 +28,7 @@ import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.Tables;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 
-public class Test {  
+public class Test {
 
     static AmazonDynamoDBClient dynamoDB;
     static AWSCredentials credentials;
@@ -63,7 +63,7 @@ public class Test {
 		//item.setId(102); //do i need this?
 		item.setValue("The information associated with this node?");
 		//item.addNeighbor(23049); //
-		mapper.save(item); 
+		mapper.save(item);
         System.out.println(item.getId());
 	}
 

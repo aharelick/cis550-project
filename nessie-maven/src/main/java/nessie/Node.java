@@ -15,21 +15,21 @@ public class Node {
     private String value;
     private Set<Integer> neighbors;
 
-    @DynamoDBHashKey(attributeName="Id")  
+    @DynamoDBHashKey(attributeName="Id")
     public Integer getId() { return id;}
     public void setId(Integer id) {this.id = id;}
-    
-    @DynamoDBAttribute(attributeName="Value")  
+
+    @DynamoDBAttribute(attributeName="Value")
     public String getValue() {return value; }
     public void setValue(String value) { this.value = value; }
-    
+
     @DynamoDBAttribute(attributeName = "Neighbors")
     public Set<Integer> getNeighbors() { return neighbors; }
     public void setNeighbors(Set<Integer> neighbors) { this.neighbors = neighbors; }
-    public void addNeighbor(Integer neighbor) { 
+    public void addNeighbor(Integer neighbor) {
     	if (this.neighbors == null) {
     		this.neighbors = new HashSet<Integer>();
     	}
-    	this.neighbors.add(neighbor); 
+    	this.neighbors.add(neighbor);
     }
 }
