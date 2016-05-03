@@ -24,15 +24,15 @@ router.get('/sign-s3', function(req, res, next) {
   var s3Options = {
     Bucket: bucketName,
     Key: req.user.id + '/' + name,
-    Expires: 60,
     ContentType: type,
-    // TODO do we want this to be public read
+    // TODO: do we want this to be public read
     ACL: 'public-read'
   };
   s3.getSignedUrl('putObject', s3Options, function(err, data) {
     if (err){
       return res.sendStatus(500);
     } else {
+      // TODO: check if this upload already exists
       var upload = new Upload({
         user: req.user.id,
         status: 'Uploading',

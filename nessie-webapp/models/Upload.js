@@ -4,7 +4,8 @@ var uploadSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
   name: String,
   status: String,
-  url: String
+  url: String,
+  public: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model('Upload', uploadSchema);

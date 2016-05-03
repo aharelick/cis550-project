@@ -20,12 +20,6 @@
         <div class="field">
           <input id="file_input" class="ui input" type="file" name="file-input">
         </div>
-        <div class="field">
-          <div class="ui checked checkbox">
-            <input type="checkbox" name="public">
-            <label>Public</label>
-          </div>
-        </div>
         <button class="ui button" action="submit">Submit Data File</button>
       </div>
       <div class="ui teal progress" id="progress">
@@ -52,7 +46,6 @@
         url: '/user/get-uploads',
         type: 'GET',
         success: function(data, textStatus, jqXHR) {
-          console.log(data);
           $('#upload-table tbody').empty();
           $.each(data, function(index, upload) {
             $('#upload-table tbody').prepend('<tr><td>' + upload.name + '</td><td class="negative">' + upload.status + '</td><td>N/A</td></tr>')
@@ -64,51 +57,54 @@
       });
     }
 
-    var createUpload = function(file, callback) {
-
-    }
-
-    var getSignedRequestAndUpload = function(file) {
+    var getSignedRequestAndUpload = function(file, callback) {
       $.ajax({
         url: '/user/sign-s3',
         type: 'GET',
         data: { name: file.name, type: file.type },
         success: function(data, textStatus, jqXHR) {
-          uploadFile(file, data);
+          callback(null, data);
         },
         error: function(jqXHR, textStatus, err) {
           console.log(err);
+          callback(err);
         }
       });
     }
 
     var uploadFile = function(file, uploadData) {
+      console.log('starting upload');
+      console.log(uploadData);
       getUploads();
       $('#progress').progress({ percent: 0 });
       var xhr = new XMLHttpRequest();
-      xhr.open("PUT", uploadData.signed_request);
+      xhr.open('PUT', uploadData.signed_request);
+      xhr.setRequestHeader('x-amz-acl', 'public-read');
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+          console.log('upload complete');
+          console.log(uploadData.url);
+          $.ajax({
+            url: '/user/update-upload',
+            type: 'POST',
+            data: { id: uploadData.upload_id, status: 'Queued' },
+            success: function (data, textStatus, jqXHR) {
+              console.log('updated status!');
+              getUploads();
+            },
+            error: function (jqXHR, textStatus, err) {
+              console.log(err);
+            }
+          });
+        } else if (xhr.readyState == 4) {
+          console.log('upload error');
+        }
+      }
       xhr.upload.onprogress = function(event) {
         if (event.lengthComputable) {
-          console.log(Math.round((event.loaded / event.total) * 100));
           $('#progress').progress({ percent: Math.round((event.loaded / event.total) * 100) });
         }
       };
-      xhr.addEventListener("load", function(event) {
-        console.log('upload complete');
-        console.log(uploadData.url);
-        $.ajax({
-          url: '/user/update-upload',
-          type: 'POST',
-          data: { id: uploadData.upload_id, status: 'Queued' },
-          success: function(data, textStatus, jqXHR) {
-            console.log('updated status!');
-            getUploads();
-          },
-          error: function(jqXHR, textStatus, err) {
-            console.log(err);
-          }
-        });
-      });
       xhr.addEventListener("error", function(event) {
         console.log('upload error');
       });
@@ -123,12 +119,16 @@
       if (!file) {
         console.log('no file selected');
       } else {
-        getSignedRequestAndUpload(file);
+        getSignedRequestAndUpload(file, function(err, uploadData) {
+          if (err) {
+            console.log(err);
+          } else {
+            uploadFile(file, uploadData);
+          }
+        });
       }
     });
     $('#progress').progress({ percent: 0 });
-    $('.ui.dropdown').dropdown();
-
     getUploads();
   </script>
 </body>
