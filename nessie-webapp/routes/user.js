@@ -115,9 +115,9 @@ router.post('/edit-upload/:id', function(req, res, next) {
       if (err) {
         return next(err);
       }
+      return res.redirect('/user/dashboard');
     });
   });
-  res.redirect('/user/dashboard');
 });
 
 router.get('/get-uploads', function(req, res, next) {
