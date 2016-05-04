@@ -6228,7 +6228,7 @@ i.flag.zimbabwe:before {
   vertical-align: middle;
 }
 
-/* With Text Node */
+/* With Text TreeNode */
 
 .ui.header .icon:only-child {
   display: inline-block;

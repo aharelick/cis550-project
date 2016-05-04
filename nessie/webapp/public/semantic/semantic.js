@@ -2150,7 +2150,7 @@ $.fn.checkbox = function(parameters) {
         observeChanges: function() {
           if('MutationObserver' in window) {
             observer = new MutationObserver(function(mutations) {
-              module.debug('DOM tree modified, updating selector cache');
+              module.debug('DOM treeBuilders modified, updating selector cache');
               module.refresh();
             });
             observer.observe(element, {
