@@ -2,18 +2,21 @@ package treeBuilders;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dbWrapper.TreeNode;
 import org.apache.commons.collections4.IteratorUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 /**
  * Created by joeraso on 5/3/16.
  */
 public class JSONTreeBuilder implements TreeBuilder {
-    private TreeNode root;
+    private Set<TreeNode> graph;
     private TreeNode parentTreeNode;
 
     public void buildRecursive(String key, JsonNode node) {
@@ -45,22 +48,20 @@ public class JSONTreeBuilder implements TreeBuilder {
 
     private TreeNode createNode(String key, String value) {
         TreeNode currentTreeNode = new TreeNode(key, value);
-
-        if (root == null) {
-            root = currentTreeNode;
-        }
+        graph.add(currentTreeNode);
 
         if (parentTreeNode != null) {
-            parentTreeNode.adj.add(currentTreeNode);
-            currentTreeNode.adj.add(parentTreeNode);
+            parentTreeNode.adj.add(currentTreeNode.id);
+            currentTreeNode.adj.add(parentTreeNode.id);
         }
 
         return currentTreeNode;
     }
 
-    public TreeNode build(File file) {
+    public Set<TreeNode> build(File file) {
         JsonNode rootNode;
         try {
+            graph = new HashSet<>();
             ObjectMapper mapper = new ObjectMapper();
             rootNode = mapper.readTree(file);
         } catch (IOException e) {
@@ -69,11 +70,6 @@ public class JSONTreeBuilder implements TreeBuilder {
         }
 
         buildRecursive(file.getName(), rootNode);
-        return root;
-    }
-
-    public static void main(String args[]) {
-        JSONTreeBuilder builder = new JSONTreeBuilder();
-        builder.build(new File("data/sample.json"));
+        return graph;
     }
 }

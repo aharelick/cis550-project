@@ -1,7 +1,10 @@
 package treeBuilders;
 
+import dbWrapper.TreeNode;
+
 import java.io.File;
+import java.util.Set;
 
 public interface TreeBuilder {
-    public TreeNode build(File file);
+    public Set<TreeNode> build(File file);
 }

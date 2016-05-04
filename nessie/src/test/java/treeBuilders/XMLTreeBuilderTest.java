@@ -1,8 +1,11 @@
 package treeBuilders;
 
+import dbWrapper.TreeNode;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 
 /**
@@ -13,7 +16,7 @@ public class XMLTreeBuilderTest {
     public static void main(String[] args) {
         DFSRunner dfsRunner = new DFSRunner();
         TreeBuilder treeBuilder = new XMLTreeBuilder();
-        TreeNode root = treeBuilder.build(new File("data/sample.xml"));
-        dfsRunner.traverse(root);
+        Set<TreeNode> graph = treeBuilder.build(new File("data/sample.xml"));
+        dfsRunner.traverse(graph);
     }
 }

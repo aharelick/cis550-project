@@ -1,11 +1,13 @@
 package main;
 
 
+import dbWrapper.TreeNode;
 import linker.Linker;
 import treeBuilders.*;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
+import java.util.Set;
 
 /**
  * Created by joeraso on 5/3/16.
@@ -27,11 +29,14 @@ public class Main {
         else if (extension.equals("json")) {
             builder = new JSONTreeBuilder();
         }
+        else if (extension.equals("csv")) {
+            builder = new CSVTreeBuilder();
+        }
         else {
             builder = new TikaTreeBuilder();
         }
 
-        TreeNode tree = builder.build(new File(filename));
+        Set<TreeNode> tree = builder.build(new File(filename));
         // TODO: Committing tree to database
 
         // Step 3: Link this new tree file with the rest of the files

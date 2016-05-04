@@ -2,11 +2,13 @@ package treeBuilders;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import dbWrapper.TreeNode;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -15,8 +17,11 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class XMLTreeBuilder implements TreeBuilder {
+	private Set<TreeNode> graph;
+	private TreeNode parentTreeNode;
 
-	public TreeNode build(File file) {
+
+	public Set<TreeNode> build(File file) {
 		DocumentBuilder dbuilder;
 		try {
 			dbuilder = (DocumentBuilderFactory.newInstance()).newDocumentBuilder();
@@ -32,16 +37,20 @@ public class XMLTreeBuilder implements TreeBuilder {
 		}
         
         Element root = doc.getDocumentElement();
-        return generateTree(root);
+        generateTree(root);
+		return graph;
 	}
 	
-	private TreeNode generateTree(Node node) {
+	private void generateTree(Node node) {
 		
 		String name = node.getNodeName();
 		TreeNode root = new TreeNode(
 				name.startsWith("#") ? name.substring(1) : name, 
 			    node.getNodeValue()
 		);
+		graph.add(root);
+		parentTreeNode.adj.add(root.id);
+		root.adj.add(parentTreeNode.id);
 		
 		// add attributes
 		NamedNodeMap attrs = node.getAttributes();
@@ -49,23 +58,19 @@ public class XMLTreeBuilder implements TreeBuilder {
 			for (int i = 0; i < attrs.getLength(); i++) {
 				Node attr = attrs.item(i);
 				TreeNode converted = new TreeNode(attr.getNodeName(), attr.getNodeValue());
-				
-				root.adj.add(converted);
-				converted.adj.add(root);
+				graph.add(converted);
+
+				root.adj.add(converted.id);
+				converted.adj.add(root.id);
 			}
 		}
 		
 		// add child nodes
 		NodeList children = node.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
-			TreeNode converted = generateTree(children.item(i));
-			if (converted != null) {
-				root.adj.add(converted);
-				converted.adj.add(root);
-			}
+			parentTreeNode = root;
+			generateTree(children.item(i));
 		}
-		
-		return root;
 	}
 
 }

@@ -1,6 +1,8 @@
 package linker;
 
-import treeBuilders.TreeNode;
+import dbWrapper.TreeNode;
+
+import java.util.Set;
 
 /**
  * Created by joeraso on 5/3/16.
@@ -9,7 +11,7 @@ import treeBuilders.TreeNode;
  */
 public class Linker {
 
-    public void createLinks(TreeNode tree) {
+    public void createLinks(Set<TreeNode> tree) {
 
     }
 
