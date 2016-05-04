@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <% include ./partials/head %>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/async/1.5.2/async.min.js"></script>
+  <style>
+    main .ui.container {
+      margin-top: 50px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <% include ./partials/header %>
+  </header>
+
+  <main>
+    <div class="ui container">
+      <h1 class="ui header">Upload Files</h1>
+      <div class="ui form">
+        <div class="field">
+          <input id="file_input" class="ui input" type="file" name="file-input">
+        </div>
+        <button class="ui button" action="submit">Submit Data File</button>
+      </div>
+      <div class="ui teal progress" id="progress">
+        <div class="bar">
+          <div class="progress"></div>
+        </div>
+      </div>
+      <h1 class="ui header">My Uploads</h1>
+      <table id="upload-table" class="ui celled table">
+        <thead>
+          <tr>
+            <th>Uploaded File</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Edit Upload</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    var getUploads = function() {
+      $.ajax({
+        url: '/user/get-uploads',
+        type: 'GET',
+        success: function(data, textStatus, jqXHR) {
+          $('#upload-table tbody').empty();
+          $.each(data, function(index, upload) {
+            $('#upload-table tbody').prepend('<tr>' +
+              '<td>' + upload.name + '</td>' +
+              '<td>' + upload.type + '</td>' +
+              '<td class="' + (upload.status === 'Uploaded' ? 'positive' : 'warning') + '">' + upload.status + '</td>' +
+              '<td><a href="/user/edit-upload/' + upload._id + '"class="ui button">Edit</a></td>' +
+              '</tr>')
+          });
+        },
+        error: function(jqXHR, textStatus, err) {
+          console.log(err);
+        }
+      });
+    }
+
+    $('.ui.form button').click(function() {
+      var file = $('.ui.form input[name="file-input"]')[0].files[0];
+      if (!file) {
+        console.log('no file selected');
+      } else {
+        triggerUpload(file);
+      }
+    });
+
+    var triggerUpload = function(file) {
+      async.waterfall([
+        function (callback) {
+          $.ajax({
+            url: '/user/create-upload',
+            type: 'GET',
+            data: { name: file.name, type: file.type },
+            success: function (data, textStatus, jqXHR) {
+              console.log('created upload with id: ' + data.upload_id);
+              callback(null, data.upload_id);
+            },
+            error: function (jqXHR, textStatus, err) {
+              console.log('error creating upload');
+              callback(err);
+            }
+          });
+        }, function(uploadId, callback) {
+          $.ajax({
+            url: '/user/sign-s3',
+            type: 'GET',
+            data: { upload_id: uploadId },
+            success: function (uploadData, textStatus, jqXHR) {
+              console.log('created signed url: ' + uploadData.signed_request);
+              console.log('file will be uploaded to: ' + uploadData.url);
+              callback(null, uploadData.signed_request, uploadData.url, uploadId);
+            },
+            error: function (jqXHR, textStatus, err) {
+              console.log('error creating signed request');
+              callback(err);
+            }
+          });
+        }, function(signedRequest, url, uploadId, callback) {
+          getUploads();
+          $('#progress').progress({ percent: 0 });
+          var oldProgress = 0;
+          var xhr = new XMLHttpRequest();
+          xhr.open('PUT', signedRequest);
+          xhr.setRequestHeader('x-amz-acl', 'public-read');
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+              console.log('file upload complete');
+              callback(null, uploadId);
+            } else if (xhr.readyState == 4) {
+              callback('upload error');
+            }
+          }
+          xhr.upload.onprogress = function(event) {
+            if (event.lengthComputable) {
+              var current = Math.round((event.loaded / event.total) * 98);
+              if (current - oldProgress > 2) {
+                $('#progress').progress({ percent: Math.round((event.loaded / event.total) * 98) });
+                oldProgress = current;
+              }
+            }
+          };
+          xhr.addEventListener("error", function(event) {
+            callback('upload error');
+          });
+          xhr.addEventListener("abort", function(event) {
+            callback('upload aborted');
+          });
+          xhr.send(file);
+          console.log('file uploading...');
+        }, function(uploadId, callback) {
+          $.ajax({
+            url: '/user/update-upload-status',
+            type: 'POST',
+            data: { id: uploadId, status: 'Uploaded' },
+            success: function (data, textStatus, jqXHR) {
+              console.log('updated status to "Uploaded"');
+              callback();
+            },
+            error: function (jqXHR, textStatus, err) {
+              console.log('error updating status to "Uploaded"')
+              callback(err);
+            }
+          });
+        }
+      ], function (err, result) {
+        // result now equals 'done'
+        $('#progress').progress({ percent: 100 });
+        getUploads();
+        // TODO: perhaps doing something on error here
+      });
+    }
+    $('#progress').progress({ percent: 0 });
+    getUploads();
+  </script>
+</body>
+</html>

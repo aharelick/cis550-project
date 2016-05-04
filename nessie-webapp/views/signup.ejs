@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <% include ./partials/head %>
+  <style>
+    body {
+      background: url(images/nessie.jpg) no-repeat center center fixed;
+      -webkit-background-size: cover;
+      -moz-background-size: cover;
+      -o-background-size: cover;
+      background-size: cover;
+    }
+    body > .grid {
+      height: 100%;
+    }
+    .column {
+      max-width: 450px;
+    }
+    form {
+      margin-top: 120px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="ui middle aligned center aligned grid">
+      <div class="column">
+        <form class="ui large form <% if(messages.form_errors_bool){%>error<%}%>" action="/signup" method="POST">
+          <% include ./partials/flash %>
+          <div class="ui stacked segment">
+            <div class="field">
+              <div class="ui input">
+                <input type="text" name="email" placeholder="E-mail address">
+              </div>
+            </div>
+            <div class="field">
+              <div class="ui input">
+                <input type="password" name="password" placeholder="Password">
+              </div>
+            </div>
+            <div class="field">
+              <div class="ui input">
+                <input type="password" name="confirm" placeholder="Confirm Your Password">
+              </div>
+            </div>
+            <div class="ui fluid large teal submit button">Sign Up</div>
+          </div>
+          <div class="ui error message">
+            <% include ./partials/form_err %>
+          </div>
+        </form>
+        <div class="ui message">
+          Already have an account? <a href="/login">Log In</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script>
+    $(document).ready(function() {
+      $('.ui.form').form({
+        fields: {
+          email: {
+            identifier: 'email',
+            rules: [{
+              type: 'empty',
+              prompt: 'Please enter your e-mail'
+            }, {
+              type: 'email',
+              prompt: 'Please enter a valid e-mail'
+            }]
+          },
+          password: {
+            identifier: 'password',
+            rules: [{
+              type: 'empty',
+              prompt: 'Please enter your password'
+            }, {
+              type: 'length[6]',
+              prompt: 'Your password must be at least 6 characters'
+            }]
+          },
+          confirm: {
+            rules: [{
+              type: 'match[password]',
+              prompt: 'Your passwords do not match'
+            }]
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

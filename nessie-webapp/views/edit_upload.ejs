@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <% include ./partials/head %>
+  <style>
+    main .ui.container {
+      margin-top: 50px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <% include ./partials/header %>
+  </header>
+
+  <main>
+    <div class="ui centered grid container">
+      <div class="eight wide column">
+        <h2>Edit Your Upload</h2>
+        <form class="ui form" action="/user/edit-upload/<%= upload.id %>" method="POST">
+          <div class="two fields">
+            <div class="field">
+              <label>Upload Name</label>
+              <input placeholder="<%= upload.name %>" readonly="" type="text">
+            </div>
+            <div class="field">
+              <label>Upload Type</label>
+              <input placeholder="<%= upload.type %>" readonly="" type="text">
+            </div>
+          </div>
+          <div class="field">
+            <label>Upload URL</label>
+            <a href="<%= upload.url %>"><%= upload.url %></a>
+          </div>
+          <div class="inline field">
+            <div class="ui slider checkbox">
+              <input type="checkbox" name="public" tabindex="0" class="hidden">
+              <label>Public</label>
+            </div>
+          </div>
+          <button class="ui positive button" type="submit">Save</button>
+          <a class="ui button" href="/user/dashboard">Back</a>
+        </form>
+      </div>
+    </div>
+  </main>
+  <script>
+    $('.ui.checkbox').checkbox(<% if (upload.public) { %> 'check' <% } %>);
+  </script>
+</body>
+</html>
