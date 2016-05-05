@@ -9,7 +9,7 @@ import search.Graphable;
 
 public class GraphTester {
 	
-	static class TestNode extends Graphable {
+	public static class TestNode extends Graphable {
 		
 		String key;
 		Set<Graphable> adj = new HashSet<Graphable>();
@@ -63,7 +63,7 @@ public class GraphTester {
 		e.addAdj(c);
 		e.addAdj(d);
 		
-		List<List<Graphable>> paths = Graph.shortestPaths(a, e);
+		List<List<Graphable>> paths = Graph.shortestPaths(d, a);
 		System.out.println("Starting.");
 		System.out.println(paths.size());
 		for (List<Graphable> path : paths) {

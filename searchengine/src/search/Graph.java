@@ -18,11 +18,7 @@ public class Graph {
 		while (!queue.isEmpty()) {
 			Graphable n = queue.poll();
 			
-			System.out.println(n);
-			
-			for (Graphable adj : n.getAdjacent()) {
-				if (adj.equals(end)) found = true;
-				
+			for (Graphable adj : n.getAdjacent()) {				
 				if (adj.depth == Integer.MAX_VALUE) {
 					adj.depth = n.depth + 1;
 					adj.parents.add(n);
@@ -32,9 +28,9 @@ public class Graph {
 				}
 			}
 		}
-		System.out.println(found);
-		if (!found) return new ArrayList<List<Graphable>>();
-		else 		return generatePaths(end);
+		List<List<Graphable>> paths = generatePaths(end);
+		if (end.parents.size() == 0) return new ArrayList<List<Graphable>>();
+		else 						 return generatePaths(end);
 	}
 
 	private static List<List<Graphable>> generatePaths(Graphable end) {
@@ -49,8 +45,8 @@ public class Graph {
 				List<List<Graphable>> stubs = generatePaths(parent);
 				for (List<Graphable> path : stubs) {
 					path.add(end);
+					paths.add(path);
 				}
-				paths.addAll(stubs);
 			}	
 		}
 	
