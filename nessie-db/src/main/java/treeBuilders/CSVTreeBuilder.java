@@ -20,7 +20,7 @@ public class CSVTreeBuilder implements TreeBuilder {
 
     private void addRecord(List<String> headers, List<String> fields) {
         // Create the 'record' node and add it to the list of records
-        TreeNode record = new TreeNode("record", filename + "/" + recordNum);
+        TreeNode record = new TreeNode("record", filename + "/" + recordNum, filename);
 
         record.adj.add(parentNode.id);
         parentNode.adj.add(record.id);
@@ -32,7 +32,7 @@ public class CSVTreeBuilder implements TreeBuilder {
         // Create all of the field nodes
         List<TreeNode> nodes = new ArrayList<>();
         for (int i = 0; i < fields.size(); i++) {
-            TreeNode currentNode = new TreeNode(headers.get(i), fields.get(i));
+            TreeNode currentNode = new TreeNode(headers.get(i), fields.get(i), filename);
             nodes.add(currentNode);
             graph.add(currentNode);
         }
@@ -64,7 +64,7 @@ public class CSVTreeBuilder implements TreeBuilder {
             // Create the root node
             this.filename = filename;
             graph = new HashSet<>();
-            parentNode = new TreeNode("file", filename);
+            parentNode = new TreeNode("file", filename, filename);
             graph.add(parentNode);
 
             CSVFormat csvFileFormat = CSVFormat.DEFAULT;

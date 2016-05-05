@@ -14,6 +14,7 @@ import java.util.Set;
 public class JSONTreeBuilder implements TreeBuilder {
     private Set<TreeNode> graph;
     private TreeNode parentTreeNode;
+    private String filename;
 
     public void buildRecursive(String key, JsonNode node) {
 
@@ -43,7 +44,7 @@ public class JSONTreeBuilder implements TreeBuilder {
     }
 
     private TreeNode createNode(String key, String value) {
-        TreeNode currentTreeNode = new TreeNode(key, value);
+        TreeNode currentTreeNode = new TreeNode(key, value, filename);
         graph.add(currentTreeNode);
 
         if (parentTreeNode != null) {
@@ -66,6 +67,7 @@ public class JSONTreeBuilder implements TreeBuilder {
 
     @Override
     public Set<TreeNode> build(InputStream stream, String filename) {
+        this.filename = filename;
         JsonNode rootNode;
         try {
             graph = new HashSet<>();

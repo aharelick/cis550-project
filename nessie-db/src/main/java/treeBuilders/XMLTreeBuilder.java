@@ -19,6 +19,7 @@ import org.xml.sax.SAXException;
 public class XMLTreeBuilder implements TreeBuilder {
 	private Set<TreeNode> graph;
 	private TreeNode parentTreeNode;
+	private String filename;
 
 	public Set<TreeNode> build(File file) {
 		try {
@@ -30,6 +31,7 @@ public class XMLTreeBuilder implements TreeBuilder {
 	}
 
 	public Set<TreeNode> build(InputStream stream, String filename) {
+		this.filename = filename;
 		graph = new HashSet<>();
 		DocumentBuilder dbuilder;
 		try {
@@ -56,7 +58,7 @@ public class XMLTreeBuilder implements TreeBuilder {
 		String name = node.getNodeName();
 		TreeNode root = new TreeNode(
 				name.startsWith("#") ? name.substring(1) : name, 
-			    node.getNodeValue()
+			    node.getNodeValue(), filename
 		);
 		graph.add(root);
 		parentTreeNode.adj.add(root.id);
@@ -67,7 +69,7 @@ public class XMLTreeBuilder implements TreeBuilder {
 		if (attrs != null) {
 			for (int i = 0; i < attrs.getLength(); i++) {
 				Node attr = attrs.item(i);
-				TreeNode converted = new TreeNode(attr.getNodeName(), attr.getNodeValue());
+				TreeNode converted = new TreeNode(attr.getNodeName(), attr.getNodeValue(), filename);
 				graph.add(converted);
 
 				root.adj.add(converted.id);

@@ -14,14 +14,16 @@ public class TreeNode {
     public String key;
     public String value;
     public Set<String> adj;
+    public String fileName;
 
     public TreeNode() {
-        this("","");
+        this("","","");
     }
 
-    public TreeNode(String key, String value) {
+    public TreeNode(String key, String value, String filename) {
         this.key = key;
         this.value = value;
+        this.fileName = filename;
         this.id = UUID.randomUUID().toString();
         adj = new HashSet<>();
     }
@@ -46,6 +48,12 @@ public class TreeNode {
     		this.adj = new HashSet<String>();
     	}
     	this.adj.add(neighbor);
+    }
+
+    @DynamoDBAttribute(attributeName = "FileName")
+    public String getFileName() {return this.fileName;}
+    public void setFileName(String filename) {
+        this.fileName = filename;
     }
 
     public String toString() {

@@ -12,12 +12,9 @@ import com.amazonaws.services.dynamodbv2.model.*;
 
 import java.util.*;
 
-/**
- * Created by joeraso on 5/3/16.
- */
 public class DBWrapperInverted {
-    private long readCapacityUnits = 10L;
-    private long writeCapacityUnits = 5L;
+    private long readCapacityUnits = 50L;
+    private long writeCapacityUnits = 50L;
 
     private Region usEast = Region.getRegion(Regions.US_EAST_1);
     private AmazonDynamoDBClient client;

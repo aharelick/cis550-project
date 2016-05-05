@@ -15,8 +15,8 @@ import java.util.*;
 
 
 public class DBWrapper {
-    private long readCapacityUnits = 10L;
-    private long writeCapacityUnits = 5L;
+    private long readCapacityUnits = 50L;
+    private long writeCapacityUnits = 50L;
 
     private Region usWest2 = Region.getRegion(Regions.US_EAST_1);
     private AmazonDynamoDBClient client;
