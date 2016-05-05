@@ -14,9 +14,6 @@ import dbWrapper.TreeNode;
 import linker.Linker;
 import treeBuilders.*;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Set;
@@ -32,7 +29,7 @@ public class UploadPipeline implements RequestHandler<S3Event, String> {
     public String handleRequest(S3Event s3event, Context context) {
         try {
             Linker linker = new Linker();
-            TreeBuilder builder;
+            TreeBuilder builder = null;
             DBWrapper dbWrapper = new DBWrapper();
             AmazonS3 s3Client = new AmazonS3Client();
             LambdaLogger logger = context.getLogger();
@@ -51,29 +48,28 @@ public class UploadPipeline implements RequestHandler<S3Event, String> {
             // Get the S3 Object
             S3Object s3Object = s3Client.getObject(new GetObjectRequest(srcBucket, srcKey));
             String contentType = s3Object.getObjectMetadata().getContentType();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()));
             logger.log("uploaded: " + srcBucket + '/' + srcKey + " of type: " + contentType);
 
-            String filename = null;
-            if (contentType.equals("xml")) {
-                builder = new XMLTreeBuilder();
-            }
-            else if (contentType.equals("json")) {
-                builder = new JSONTreeBuilder();
-            }
-            else if (contentType.equals("csv")) {
-                builder = new CSVTreeBuilder();
-            }
-            else {
-                builder = new TikaTreeBuilder();
+
+            // Instantiate the correct tree builder
+            switch (contentType) {
+                case "xml":
+                    builder = new XMLTreeBuilder();
+                    break;
+                case "json":
+                    builder = new JSONTreeBuilder();
+                    break;
+                case "csv":
+                    builder = new CSVTreeBuilder();
+                    break;
             }
 
             // Build the tree, create links, and persist
-            Set<TreeNode> tree = builder.build(reader);
-            linker.createLinks(tree);
-            dbWrapper.insertNodes(tree);
-
+            if (builder != null) {
+                Set<TreeNode> tree = builder.build(s3Object.getObjectContent(), srcKey);
+                linker.createLinks(tree);
+                dbWrapper.insertNodes(tree);
+            }
         } catch (Exception e) {
             System.out.println("Error uploading file to database");
         }
