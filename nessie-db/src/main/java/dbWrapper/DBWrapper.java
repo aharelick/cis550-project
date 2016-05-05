@@ -22,6 +22,19 @@ public class DBWrapper {
     private AmazonDynamoDBClient client;
     private DynamoDBMapper mapper;
     private AWSCredentials credentials;
+    
+    private static DBWrapper instance;
+    
+    public static DBWrapper connect() {
+    	if (instance != null) return instance;
+    	
+    	try {
+    		instance = new DBWrapper();
+    	} catch (Exception e) {
+    		return null;
+    	}
+    	return instance;
+    }
 
     public DBWrapper() throws Exception {
         try {

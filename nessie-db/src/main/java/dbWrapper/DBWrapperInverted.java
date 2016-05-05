@@ -20,6 +20,19 @@ public class DBWrapperInverted {
     private AmazonDynamoDBClient client;
     private DynamoDBMapper mapper;
     private AWSCredentials credentials;
+    
+    private static DBWrapperInverted instance;
+    
+    public static DBWrapperInverted connect() {
+    	if (instance != null) return instance;
+    	
+    	try {
+    		instance = new DBWrapperInverted();
+    	} catch (Exception e) {
+    		return null;
+    	}
+    	return instance;
+    }
 
     public DBWrapperInverted() throws Exception {
         try {
@@ -48,7 +61,7 @@ public class DBWrapperInverted {
 
     private Set<InvertedNode> fetchNodes(String attrKey, String attrVal, String indexName) {
         Map<String, AttributeValue> eav = new HashMap<>();
-        eav.put(attrKey, new AttributeValue().withS(attrVal));
+        eav.put(":" + attrKey, new AttributeValue().withS(attrVal));
 
 
         DynamoDBQueryExpression<InvertedNode> queryExpression = new DynamoDBQueryExpression<>();
