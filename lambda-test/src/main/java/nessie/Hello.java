@@ -29,7 +29,13 @@ public class Hello implements RequestHandler<S3Event, String> {
             // probably do something here
         }
         LambdaLogger logger = context.getLogger();
-        logger.log("uploaded: " + srcBucket + '/' + srcKey);
+
+        AmazonS3 s3Client = new AmazonS3Client();
+        S3Object s3Object = s3Client.getObject(new GetObjectRequest(srcBucket, srcKey));
+        ObjectMetadata s3ObjectMetadata = s3Object.getObjectMetadata();
+        String contentType = s3ObjectMetadata.getContentType();
+        // InputStream objectData = s3Object.getObjectContent();
+        logger.log("uploaded: " + srcBucket + '/' + srcKey + " of type: " + contentType);
         return srcBucket + '/' + srcKey;
     }
 }
