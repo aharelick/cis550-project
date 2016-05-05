@@ -23,6 +23,13 @@
   <dependencies>
     <dependency>
       <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-bom</artifactId>
+      <version>1.10.10</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
       <artifactId>aws-lambda-java-core</artifactId>
       <version>1.1.0</version>
     </dependency>
@@ -81,6 +88,24 @@
       <artifactId>commons-csv</artifactId>
       <version>1.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-lambda</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-lambda-java-events</artifactId>
+      <version>1.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-s3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-lambda-java-core</artifactId>
+      <version>1.1.0</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -98,7 +123,7 @@
             <configuration>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>main.Main</mainClass>
+                  <mainClass>main.UploadPipeline</mainClass>
                 </transformer>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
                   <resource>resources/log4j.properties</resource>

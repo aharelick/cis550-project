@@ -1,8 +1,6 @@
 package treeBuilders;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -14,9 +12,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
-/**
- * Created by joeraso on 5/4/16.
- */
 public class CSVTreeBuilder implements TreeBuilder {
     private String filename;
     private Set<TreeNode> graph;
@@ -54,18 +49,26 @@ public class CSVTreeBuilder implements TreeBuilder {
         }
     }
 
-    @Override
     public Set<TreeNode> build(File file) {
         try {
+            return build(new FileInputStream(file), file.getName());
+        } catch (IOException e) {
+            System.out.println("Couldn't create tree");
+        }
+        return null;
+    }
+
+    @Override
+    public Set<TreeNode> build(InputStream stream, String filename) {
+        try {
             // Create the root node
+            this.filename = filename;
             graph = new HashSet<>();
-            filename = file.getName();
-            parentNode = new TreeNode("file", file.getName());
+            parentNode = new TreeNode("file", filename);
             graph.add(parentNode);
 
-            FileReader reader = new FileReader(file);
             CSVFormat csvFileFormat = CSVFormat.DEFAULT;
-            CSVParser parser = new CSVParser(reader, csvFileFormat);
+            CSVParser parser = new CSVParser(new BufferedReader(new InputStreamReader(stream)), csvFileFormat);
             List<CSVRecord> records = parser.getRecords();
 
             // Create the headers

@@ -19,7 +19,7 @@ public class DBWrapper {
     private long readCapacityUnits = 10L;
     private long writeCapacityUnits = 5L;
 
-    private Region usWest2 = Region.getRegion(Regions.US_WEST_2);
+    private Region usWest2 = Region.getRegion(Regions.US_EAST_1);
     private AmazonDynamoDBClient client;
     private DynamoDBMapper mapper;
     private AWSCredentials credentials;
@@ -97,7 +97,7 @@ public class DBWrapper {
 
     // Delete a table with a given name
     public void deleteTable(String tableName) {
-        client.deleteTable("NessieData");
+        client.deleteTable(tableName);
     }
 
     // Create the table with the TreeNode Schema

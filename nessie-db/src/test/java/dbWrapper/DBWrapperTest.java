@@ -6,8 +6,6 @@ import treeBuilders.JSONTreeBuilder;
 import treeBuilders.TreeBuilder;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class DBWrapperTest {
@@ -21,14 +19,13 @@ public class DBWrapperTest {
 
         //dbWrapper.deleteTable("NessieData");
 
-
         // If the table doesn't exist then delete it
-        if (!dbWrapper.tableExists("NessieData")) {
+        if (!dbWrapper.tableExists("NessieDataTest")) {
             dbWrapper.createTableFromTreeNode();
         }
 
-        Set<TreeNode> tree = builder.build(new File("data/sample.json"));
-        dbWrapper.insertNodes(tree);
+        //Set<TreeNode> tree = builder.build(new File("data/sample.json"));
+        //dbWrapper.insertNodes(tree);
         Set<TreeNode> fetchedTree = dbWrapper.fetchNodesWithKey("sample.json");
         dbWrapper.insertNodes(fetchedTree);
 

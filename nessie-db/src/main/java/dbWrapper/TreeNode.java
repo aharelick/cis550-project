@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 
-@DynamoDBTable(tableName="NessieData")
+@DynamoDBTable(tableName="NessieDataTest")
 public class TreeNode {
 
     public String id;

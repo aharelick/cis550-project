@@ -1,7 +1,7 @@
 package treeBuilders;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -20,8 +20,17 @@ public class XMLTreeBuilder implements TreeBuilder {
 	private Set<TreeNode> graph;
 	private TreeNode parentTreeNode;
 
-
 	public Set<TreeNode> build(File file) {
+		try {
+			return build(new FileInputStream(file), file.getName());
+		} catch (IOException e) {
+			System.out.println("Couldn't Read File In");
+		}
+		return null;
+	}
+
+	public Set<TreeNode> build(InputStream stream, String filename) {
+		graph = new HashSet<>();
 		DocumentBuilder dbuilder;
 		try {
 			dbuilder = (DocumentBuilderFactory.newInstance()).newDocumentBuilder();
@@ -31,7 +40,8 @@ public class XMLTreeBuilder implements TreeBuilder {
 		}
 		Document doc;
         try {
-			doc = dbuilder.parse(file);
+
+			doc = dbuilder.parse(stream);
 		} catch (SAXException | IOException e) {
 			return null;
 		}
