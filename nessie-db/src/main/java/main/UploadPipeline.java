@@ -78,11 +78,17 @@ public class UploadPipeline implements RequestHandler<S3Event, String> {
 
             // Build the inverted and forward indices and create links to other trees
             if (builder != null) {
+                logger.log("about to build tree set");
                 Set<TreeNode> tree = builder.build(s3Object.getObjectContent(), srcKey);
+                logger.log("done building tree set, about to build inverted set");
                 Set<InvertedNode> inverted = InvertedBuilder.build(tree);
+                logger.log("done building inverted tree set, about to create links");
                 linker.createLinks(tree);
+                logger.log("done creating links, about to insert inverted nodes");
                 dbWrapperInverted.insertNodes(inverted);
+                logger.log("done creating inverted links, about to insert nodes");
                 dbWrapper.insertNodes(tree);
+                logger.log("done inserting nodes");
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -129,5 +129,10 @@ router.get('/get-uploads', function(req, res, next) {
   });
 });
 
+router.get('/search', function(req, res, next) {
+  return res.render('search', { title: 'Search' });
+});
+
+
 
 module.exports = router;
