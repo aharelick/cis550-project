@@ -34,6 +34,7 @@
           <tr>
             <th>Uploaded File</th>
             <th>Type</th>
+            <th>Access</th>
             <th>Status</th>
             <th>Edit Upload</th>
           </tr>
@@ -53,8 +54,9 @@
             $('#upload-table tbody').prepend('<tr>' +
               '<td>' + upload.name + '</td>' +
               '<td>' + upload.type + '</td>' +
+              '<td>' + (upload.public ? 'Public' : 'Private') + '</td>' +
               '<td class="' + (upload.status === 'Uploaded' ? 'positive' : 'warning') + '">' + upload.status + '</td>' +
-              '<td><a href="/user/edit-upload/' + upload._id + '"class="ui button">Edit</a></td>' +
+              '<td><a href="/user/edit-upload/' + upload._id + '"class="ui teal button">Edit</a></td>' +
               '</tr>')
           });
         },
@@ -64,8 +66,17 @@
       });
     }
 
+    $('#file_input').change(function () {
+      var file = $('#file_input')[0].files[0];
+      if (!file) {
+        $('.ui.form .ui.button').removeClass('teal')
+      } else {
+        $('.ui.form .ui.button').addClass('teal')
+      }
+    });
+
     $('.ui.form button').click(function() {
-      var file = $('.ui.form input[name="file-input"]')[0].files[0];
+      var file = $('#file_input')[0].files[0];
       if (!file) {
         console.log('no file selected');
       } else {
