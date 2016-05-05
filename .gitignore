@@ -1,0 +1,9 @@
+# OSX Stuff
+.DS_Store
+
+# Jet Brains
+.idea
+
+# Eclipse Core
+.project
+
