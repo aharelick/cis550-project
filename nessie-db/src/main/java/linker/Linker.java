@@ -33,7 +33,7 @@ public class Linker {
                 node.adj.add(fetchedNode.id);
             }
             dbWrapper.insertNodes(fetchedNodes);
-
         }
+
     }
 }

@@ -39,7 +39,7 @@ public class TreeNode {
 
     @DynamoDBAttribute(attributeName = "Neighbors")
     public Set<String> getAdj() { return adj; }
-    public void setNeighbors(Set<String> neighbors) { this.adj = neighbors; }
+    public void setAdj(Set<String> neighbors) { this.adj = neighbors; }
     public void addNeighbor(String neighbor) {
     	if (this.adj == null) {
     		this.adj = new HashSet<String>();

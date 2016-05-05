@@ -36,6 +36,7 @@ public class DBWrapper {
         mapper = new DynamoDBMapper(client);
     }
 
+    // Check if table with 'name' exists
     public boolean tableExists(String name) {
         for (String tableName: client.listTables().getTableNames()) {
             if (tableName.equals(name)) {
@@ -45,17 +46,37 @@ public class DBWrapper {
         return false;
     }
 
+    // Insert all nodes in the given set
+    public void insertNodes(Set<TreeNode> nodes) {
+        try {
+            mapper.batchWrite(new ArrayList<>(nodes), new ArrayList<TreeNode>());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public TreeNode fetchNodeWithId(String id) {
+        try {
+            return mapper.load(TreeNode.class, id);
+        } catch (ResourceNotFoundException e) {
+            return null;
+        }
+    }
+
+    // Get all nodes with a given key
     public Set<TreeNode> fetchNodesWithKey(String key) {
         return fetchNodes("NodeKey", key, "NodeKey-Index");
     }
 
+    // Get all nodes with a given value
     public Set<TreeNode> fetchNodesWithValue(String value) {
         return fetchNodes("NodeValue", value, "NodeValue-Index");
     }
 
+    // Helper function to retrieve nodes
     private Set<TreeNode> fetchNodes(String attrKey, String attrVal, String indexName) {
         Map<String, AttributeValue> eav = new HashMap<>();
-        eav.put(attrKey, new AttributeValue().withS(attrVal));
+        eav.put(":"+ attrKey, new AttributeValue().withS(attrVal));
 
 
         DynamoDBQueryExpression<TreeNode> queryExpression = new DynamoDBQueryExpression<>();
@@ -74,10 +95,12 @@ public class DBWrapper {
         return new HashSet<>(nodes);
     }
 
+    // Delete a table with a given name
     public void deleteTable(String tableName) {
         client.deleteTable("NessieData");
     }
 
+    // Create the table with the TreeNode Schema
     public void createTableFromTreeNode() {
         try {
             CreateTableRequest request = mapper.generateCreateTableRequest(TreeNode.class);
@@ -91,20 +114,19 @@ public class DBWrapper {
                     .withIndexName("NodeKey-Index")
                     .withKeySchema(
                             new KeySchemaElement().withAttributeName("NodeKey").withKeyType(KeyType.HASH))
-                    .withProjection(new Projection() .withProjectionType(ProjectionType.KEYS_ONLY))
+                    .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
+                    .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(readCapacityUnits)
+                                                                          .withWriteCapacityUnits(writeCapacityUnits)));
+
+            globalSecondaryIndexes.add(new GlobalSecondaryIndex()
+                    .withIndexName("NodeValue-Index")
+                    .withKeySchema(new KeySchemaElement().withAttributeName("NodeValue").withKeyType(KeyType.HASH))
+                    .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                     .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(readCapacityUnits)
                                                                           .withWriteCapacityUnits(writeCapacityUnits)));
             request.setGlobalSecondaryIndexes(globalSecondaryIndexes);
 
             client.createTable(request);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void insertNodes(Set<TreeNode> nodes) {
-        try {
-            mapper.batchWrite(new ArrayList<>(nodes), new ArrayList<TreeNode>());
         } catch (Exception e) {
             e.printStackTrace();
         }

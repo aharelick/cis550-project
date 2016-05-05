@@ -14,9 +14,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 
 import org.apache.log4j.Logger;
 
-/**
- * Created by joeraso on 5/3/16.
- */
 public class Main {
     //static final Logger log = Logger.getLogger(Main.class);
 

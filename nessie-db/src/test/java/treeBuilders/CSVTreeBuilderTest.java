@@ -15,6 +15,5 @@ public class CSVTreeBuilderTest {
         TreeBuilder treeBuilder = new CSVTreeBuilder();
         Set<TreeNode> graph = treeBuilder.build(new File("data/sample.csv"));
         dfsRunner.traverse(graph);
-        System.out.println("end");
     }
 }
