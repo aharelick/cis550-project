@@ -1,5 +1,6 @@
 package dbWrapper;
 
+import dbWrapper.InvertedNode;
 import dbWrapper.TreeNode;
 
 import java.util.HashSet;
@@ -7,18 +8,18 @@ import java.util.Set;
 
 public class InvertedBuilder {
 
-	public static Set<TreeNode> build(Set<TreeNode> tree) {
-		Set<TreeNode> inverted = new HashSet<TreeNode>();
+	public static Set<InvertedNode> build(Set<TreeNode> tree) {
+		Set<InvertedNode> inverted = new HashSet<InvertedNode>();
 		for (TreeNode t : tree) {
 			//We want to tokenize the value, and add a mapping from key->token
-			String key = t.getNodeKey();
+			String key = t.getId();
 			String[] tokens = t.getNodeValue().split("\\s");
 			for (String s : tokens) {
-				TreeNode n = new TreeNode(key, s);
+				InvertedNode n = new InvertedNode(key, s);
+				inverted.add(n);
 			}
 		}
 		return inverted;
-
 	}
 
 }

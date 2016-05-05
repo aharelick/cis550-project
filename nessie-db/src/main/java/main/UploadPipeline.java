@@ -9,11 +9,11 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.event.S3EventNotification;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
-import dbWrapper.DBWrapper;
-import dbWrapper.TreeNode;
+import dbWrapper.*;
 import linker.Linker;
 import treeBuilders.*;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Set;
@@ -31,7 +31,19 @@ public class UploadPipeline implements RequestHandler<S3Event, String> {
             Linker linker = new Linker();
             TreeBuilder builder = null;
             DBWrapper dbWrapper = new DBWrapper();
+            DBWrapperInverted dbWrapperInverted = new DBWrapperInverted();
             AmazonS3 s3Client = new AmazonS3Client();
+
+            // If table doesn't exist yet, then create it
+            if (!dbWrapper.tableExists("NessieDataTest")) {
+                dbWrapper.createTableFromTreeNode();
+            }
+
+            // If inverted index doesn't exist yet, then create it
+            if (!dbWrapperInverted.tableExists("InvertedDataTest")) {
+                dbWrapperInverted.createTableFromInvertedNode();
+            }
+
             LambdaLogger logger = context.getLogger();
 
             S3EventNotification.S3EventNotificationRecord record = s3event.getRecords().get(0);
@@ -53,28 +65,34 @@ public class UploadPipeline implements RequestHandler<S3Event, String> {
 
             // Instantiate the correct tree builder
             switch (contentType) {
-                case "xml":
+                case "text/xml":
                     builder = new XMLTreeBuilder();
                     break;
-                case "json":
+                case "application/json":
                     builder = new JSONTreeBuilder();
                     break;
-                case "csv":
+                case "text/csv":
                     builder = new CSVTreeBuilder();
                     break;
             }
 
-            // Build the tree, create links, and persist
+            // Build the inverted and forward indices and create links to other trees
             if (builder != null) {
                 Set<TreeNode> tree = builder.build(s3Object.getObjectContent(), srcKey);
+                Set<InvertedNode> inverted = InvertedBuilder.build(tree);
                 linker.createLinks(tree);
+                dbWrapperInverted.insertNodes(inverted);
                 dbWrapper.insertNodes(tree);
             }
         } catch (Exception e) {
-            System.out.println("Error uploading file to database");
+            e.printStackTrace();
         }
 
         return "Success!";
     }
 
+    public static void main(String[] args) {
+        UploadPipeline pipe = new UploadPipeline();
+        pipe.handleRequest(null,null);
+    }
 }

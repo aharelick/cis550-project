@@ -2,19 +2,18 @@ package dbWrapper;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.KeyPair;
 import com.amazonaws.services.dynamodbv2.model.*;
 
 import java.util.*;
 
-/**
- * Created by joeraso on 5/3/16.
- */
+
 public class DBWrapper {
     private long readCapacityUnits = 10L;
     private long writeCapacityUnits = 5L;
@@ -26,7 +25,7 @@ public class DBWrapper {
 
     public DBWrapper() throws Exception {
         try {
-            credentials = new ProfileCredentialsProvider().getCredentials();
+            credentials = new DefaultAWSCredentialsProviderChain().getCredentials();
         } catch (Exception e) {
             throw new AmazonClientException("Couldn't Load Credentials", e);
         }
@@ -59,8 +58,34 @@ public class DBWrapper {
         try {
             return mapper.load(TreeNode.class, id);
         } catch (ResourceNotFoundException e) {
+            System.out.println("No nodes with given id found");
             return null;
         }
+    }
+
+    public Set<TreeNode> fetchNodesWithIds(Set<String> ids) {
+        Map<Class<?>, List<KeyPair>> keyPairMap = new HashMap<>();
+        List<KeyPair> keyPairList = new ArrayList<>();
+        for (String id : ids) {
+            KeyPair keyPair = new KeyPair();
+            keyPair.setHashKey(id);
+            keyPairList.add(keyPair);
+        }
+        keyPairMap.put(TreeNode.class, keyPairList);
+        Set<TreeNode> matchedSet;
+        try {
+            matchedSet = new HashSet<>();
+            for(List<Object> treeList : mapper.batchLoad(keyPairMap).values()) {
+                for (Object obj : treeList) {
+                    matchedSet.add((TreeNode) obj);
+                }
+            }
+        } catch (ResourceNotFoundException e) {
+            System.out.println("No nodes with given ids found");
+            return null;
+        }
+
+        return matchedSet;
     }
 
     // Get all nodes with a given key

@@ -24,6 +24,7 @@ public class DBWrapperTest {
             dbWrapper.createTableFromTreeNode();
         }
 
+
         //Set<TreeNode> tree = builder.build(new File("data/sample.json"));
         //dbWrapper.insertNodes(tree);
         Set<TreeNode> fetchedTree = dbWrapper.fetchNodesWithKey("sample.json");
