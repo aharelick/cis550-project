@@ -3,7 +3,10 @@ var router = express.Router();
 var User = require('../models/User');
 var Upload = require('../models/Upload');
 var aws = require('aws-sdk');
-
+var fs = require('fs');
+var formidable = require('formidable');
+var parseString = require('xml2js').parseString;
+var Converter = require("csvtojson").Converter;
 
 /* GET index page. */
 router.get('/', function(req, res, next) {
@@ -52,12 +55,43 @@ router.get('/sign-s3', function(req, res, next) {
   });
 });
 
-router.get('/create-upload', function(req, res, next) {
-  var name = req.query.name;
-  var type = req.query.type;
+
+
+router.post('/create-upload', function(req, res, next) {
+
+  // Create the tree and store it in Mongo
+  var form = new formidable.IncomingForm();
+  form.parse(req, function(err, fields, files) {
+    var contents;
+
+    if (fields.type === 'application/json') {
+      contents = JSON.parse(fs.readFileSync(files.file.path));
+      console.log(contents);
+    }
+    else if (fields.type === 'text/xml') {
+      parseString(fs.readFileSync(files.file.path, 'utf8'), function(err, result) {
+        contents = result;
+        console.log('%j', result);
+      })
+    }
+    else if (fields.type === 'text/csv') {
+      var converter = new Converter({});
+      converter.fromString(fs.readFileSync(files.file.path, 'utf8'), function(err,result){
+        contents = result;
+        console.log(result);
+      });
+    }
+
+    // Create a dataItem and store it in Mongo
+    dataItem = new DataItem({
+      filename: files.name,
+      data: 
+    })
+
+  });
 
   // TODO: check if this upload already exists
-  var upload = new Upload({
+  /*var upload = new Upload({
     user: req.user.id,
     status: 'Created Upload',
     name: name,
@@ -69,7 +103,8 @@ router.get('/create-upload', function(req, res, next) {
     } else {
       return res.json({ upload_id: upload.id });
     }
-  });
+  });*/
+  return res.json({});
 });
 
 router.post('/update-upload-status', function(req, res, next) {
@@ -99,7 +134,6 @@ router.get('/edit-upload/:id', function(req, res, next) {
     } else {
       return res.render('edit_upload', { upload: upload, title: 'Edit Upload' });
     }
-
   });
 });
 

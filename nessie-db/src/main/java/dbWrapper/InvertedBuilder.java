@@ -1,8 +1,5 @@
 package dbWrapper;
 
-import dbWrapper.InvertedNode;
-import dbWrapper.TreeNode;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,6 +12,7 @@ public class InvertedBuilder {
 			String key = t.getId();
 			String[] tokens = t.getNodeValue().split("\\s");
 			for (String s : tokens) {
+				if (s.isEmpty()) continue;
 				InvertedNode n = new InvertedNode(key, s);
 				inverted.add(n);
 			}

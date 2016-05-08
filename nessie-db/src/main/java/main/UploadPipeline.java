@@ -10,7 +10,10 @@ import com.amazonaws.services.s3.event.S3EventNotification;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import dbWrapper.*;
+import linker.CSVLinker;
+import linker.JSONLinker;
 import linker.Linker;
+import linker.XMLLinker;
 import treeBuilders.*;
 
 import java.io.File;
@@ -28,7 +31,7 @@ public class UploadPipeline implements RequestHandler<S3Event, String> {
     @Override
     public String handleRequest(S3Event s3event, Context context) {
         try {
-            Linker linker = new Linker();
+            Linker linker = null;
             TreeBuilder builder = null;
             DBWrapper dbWrapper = new DBWrapper();
             DBWrapperInverted dbWrapperInverted = new DBWrapperInverted();
@@ -66,12 +69,15 @@ public class UploadPipeline implements RequestHandler<S3Event, String> {
             // Instantiate the correct tree builder
             switch (contentType) {
                 case "text/xml":
+                    linker = new XMLLinker();
                     builder = new XMLTreeBuilder();
                     break;
                 case "application/json":
+                    linker = new JSONLinker();
                     builder = new JSONTreeBuilder();
                     break;
                 case "text/csv":
+                    linker = new CSVLinker();
                     builder = new CSVTreeBuilder();
                     break;
             }

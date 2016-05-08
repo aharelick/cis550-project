@@ -85,13 +85,21 @@
     });
 
     var triggerUpload = function(file) {
+      var formData = new FormData();
+      formData.append('file', file);
+      formData.append('name', file.name);
+      formData.append('type', file.type);
+
       async.waterfall([
         function (callback) {
           $.ajax({
             url: '/user/create-upload',
-            type: 'GET',
-            data: { name: file.name, type: file.type },
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
             success: function (data, textStatus, jqXHR) {
+              console.log(data.upload_id);
               console.log('created upload with id: ' + data.upload_id);
               callback(null, data.upload_id);
             },
@@ -100,7 +108,7 @@
               callback(err);
             }
           });
-        }, function(uploadId, callback) {
+        }/*, function(uploadId, callback) {
           $.ajax({
             url: '/user/sign-s3',
             type: 'GET',
@@ -161,7 +169,7 @@
               callback(err);
             }
           });
-        }
+        }*/
       ], function (err, result) {
         // result now equals 'done'
         $('#progress').progress({ percent: 100 });

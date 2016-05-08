@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.UUID;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
+import com.sleepycat.persist.model.Entity;
+import com.sleepycat.persist.model.PrimaryKey;
 
 // TODO: Change back from test
 @DynamoDBTable(tableName="NessieDataTest")

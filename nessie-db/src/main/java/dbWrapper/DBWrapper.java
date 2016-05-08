@@ -8,6 +8,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.KeyPair;
 import com.amazonaws.services.dynamodbv2.model.*;
 
@@ -23,7 +24,7 @@ public class DBWrapper {
     private DynamoDBMapper mapper;
     private AWSCredentials credentials;
 
-    public DBWrapper() throws Exception {
+    public DBWrapper() {
         try {
             credentials = new DefaultAWSCredentialsProviderChain().getCredentials();
         } catch (Exception e) {
@@ -31,7 +32,7 @@ public class DBWrapper {
         }
 
         client = new AmazonDynamoDBClient(credentials);
-        client.setRegion(usWest2);
+        client.withEndpoint("http://localhost:8000");
         mapper = new DynamoDBMapper(client);
     }
 
@@ -43,6 +44,14 @@ public class DBWrapper {
             }
         }
         return false;
+    }
+
+    public void printAllNodes() {
+        DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
+        List<TreeNode> scanResult = mapper.scan(TreeNode.class, scanExpression);
+        for (TreeNode node : scanResult) {
+            System.out.println(node);
+        }
     }
 
     // Insert all nodes in the given set
