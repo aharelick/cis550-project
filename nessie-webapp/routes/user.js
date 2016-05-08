@@ -1,11 +1,13 @@
+var fs = require('fs');
+var util = require('util');
 var express = require('express');
 var router = express.Router();
 var User = require('../models/User');
 var Upload = require('../models/Upload');
+var DataItem = require('../models/DataItem');
 var aws = require('aws-sdk');
-var fs = require('fs');
 var formidable = require('formidable');
-var parseString = require('xml2js').parseString;
+var xml2js = require('xml2js');
 var Converter = require("csvtojson").Converter;
 
 /* GET index page. */
@@ -66,28 +68,38 @@ router.post('/create-upload', function(req, res, next) {
 
     if (fields.type === 'application/json') {
       contents = JSON.parse(fs.readFileSync(files.file.path));
-      console.log(contents);
     }
     else if (fields.type === 'text/xml') {
-      parseString(fs.readFileSync(files.file.path, 'utf8'), function(err, result) {
+      var parser = new xml2js.Parser({'attrkey': 'attrs'});
+      parser.parseString(fs.readFileSync(files.file.path, 'utf8'), function(err, result) {
         contents = result;
-        console.log('%j', result);
       })
     }
     else if (fields.type === 'text/csv') {
       var converter = new Converter({});
       converter.fromString(fs.readFileSync(files.file.path, 'utf8'), function(err,result){
         contents = result;
-        console.log(result);
       });
     }
-
-    // Create a dataItem and store it in Mongo
-    dataItem = new DataItem({
-      filename: files.name,
-      data: 
+    
+    DataItem.find({fileName: fields.name}, function(err, dataItems) {
+      if (dataItems.length > 0) {
+        console.log(util.inspect(dataItems, false, null));
+        return res.json({message: 'Item with given filename is already in DB'})
+      } else {
+        // If file with name wasn't already in Mongo, then add it
+        dataItem = new DataItem({
+          fileName: fields.name,
+          data: contents
+        });
+        dataItem.save(function(err) {
+          if (err) {
+            console.log(err);
+            return res.sendStatus(500);
+          }
+        });
+      }
     })
-
   });
 
   // TODO: check if this upload already exists
@@ -104,7 +116,6 @@ router.post('/create-upload', function(req, res, next) {
       return res.json({ upload_id: upload.id });
     }
   });*/
-  return res.json({});
 });
 
 router.post('/update-upload-status', function(req, res, next) {

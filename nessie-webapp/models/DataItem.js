@@ -6,4 +6,4 @@ var dataItemSchema = new mongoose.Schema({
 	neighbors: []
 });
 
-module.exports = mongoose.model('DataItem', uploadSchema);
+module.exports = mongoose.model('DataItem', dataItemSchema);
