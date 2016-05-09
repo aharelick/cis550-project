@@ -6,7 +6,7 @@ var User = require('../models/User');
 var Upload = require('../models/Upload');
 var Node = require('../models/Node');
 var aws = require('aws-sdk');
-var formidable = require('formidable');
+//var formidable = require('formidable');
 var xml2js = require('xml2js');
 var Converter = require("csvtojson").Converter;
 
@@ -18,6 +18,11 @@ router.get('/', function(req, res, next) {
 /* GET dashboard page. */
 router.get('/dashboard', function(req, res, next) {
   return res.render('dashboard', { title: 'Nessie' });
+});
+
+/* GET search results page*/
+router.get('/searchResults', function(req, res, next) {
+  return res.render('searchResults', {});
 });
 
 
@@ -84,6 +89,7 @@ var recursiveUpToRoot = function(node, path, res) {
   })
 }
 
+/*
 router.post('/create-upload', function(req, res, next) {
 
   // Create the tree and store it in Mongo
@@ -144,6 +150,8 @@ router.post('/create-upload', function(req, res, next) {
     });
   });
 });
+
+*/
 
 // Iterate through the dataItem and add all entries to an inverted index
 var createNodes = function(key, value, parent, fileId, nodes) {
