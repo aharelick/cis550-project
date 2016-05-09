@@ -14,10 +14,12 @@
     }
 
     #sigma-container {
-    max-width: 100%;
-    height: 400px;
-    margin: auto;
+      max-width: 100%;
+      height: 400px;
+      margin: auto;
+      border: 2px solid;
     }
+
   </style>
 </head>
 <body>
@@ -79,6 +81,9 @@
     }
 
     var renderGraph = function(data) {
+      if (data.message != null) {
+        $('#sigma-container').text("No results were found");
+      }
       console.log("rendering....");
       var formattedObj = translate(data, formattedObj);
       console.log(formattedObj);
