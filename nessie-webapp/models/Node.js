@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 
 var nodeSchema = new mongoose.Schema({
-	key: {type: String, ref: "Key", index: true},
+	key: {type: String, index: true},
 	docId: String,
 	parent: String,
 	neighbors: []

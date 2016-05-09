@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 
 var invertedNodeSchema = new mongoose.Schema({
-	term: {type: String, ref: "Key", index: true},
+	term: {type: String, index: true},
 	nodeId: String
 });
 

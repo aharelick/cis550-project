@@ -10,7 +10,7 @@ var aws = require('aws-sdk');
 var formidable = require('formidable');
 var xml2js     = require('xml2js');
 var Converter  = require("csvtojson").Converter;
-var search     = require('./search.js');
+
 
 /* GET index page. */
 router.get('/', function(req, res, next) {
@@ -140,6 +140,7 @@ router.post('/create-upload', function(req, res, next) {
             var invertedNodes = [];
             var parentNode = addNode(fields.name, null, writeResult._id, nodes, invertedNodes);
             createNodes(contents, parentNode, writeResult._id, nodes, invertedNodes);
+            createLinks(invertedNodes);
             Node.insertMany(nodes, function(err, writeResult) {
               if (err) {
                 return res.sendStatus(500);
@@ -149,7 +150,6 @@ router.post('/create-upload', function(req, res, next) {
                   console.log(err);
                   return res.sendStatus(500);
                 } else {
-                  console.log(writeResult);
                   return res.json({success:true})
                 }
               })
@@ -202,6 +202,19 @@ var addNode = function(key, parent, fileId, nodes, invertedNodes) {
 
   nodes.push(node);
   return node;
+}
+
+var createLinks = function(invertedNodes) {
+  invertedNodes.forEach(function(value, index) {
+    InvertedNode.find({term: value.term}, function(err, invertedNodes) {
+      console.log(invertedNodes);
+      nodeIds = [];
+      invertedNodes.forEach(function(val, index) {
+        nodeIds.push(val.nodeId);
+      })
+      console.log(nodeIds);
+    })
+  })
 }
 
 router.post('/update-upload-status', function(req, res, next) {
@@ -258,10 +271,6 @@ router.get('/get-uploads', function(req, res, next) {
     }
     return res.json(uploads);
   });
-});
-
-router.get('/search', function(req, res, next) {
-  return res.render('search', { title: 'Search' });
 });
 
 
