@@ -1,4 +1,5 @@
-var Node = require('../models/Node.js');
+var Node         = require('../models/Node.js');
+var InvertedNode = require('../models/InvertedNode.js');
 
 var NUM_RESULTS = 5;
 
@@ -214,37 +215,38 @@ var searchengine = function(query, callback) {
     finished.init();
 
     var assemble = function(token, results, finished, callback) {
-        return function(err, nodes) {
+        return function(err, inodes) {
             if (err) console.log(err);
             else {
-                finished[token] = true;
-                console.log('for ' + token + ' got ' + nodes);
-                if (nodes.length > 0) results.push(nodes);
-                if (finished.check()) {
-                    if (results.length == 0) callback([]);
-                    topk(cartesian(results), NUM_RESULTS, callback);
+                var ids = [];
+                for (var i = 0; i < inodes.length; i++) {
+                    ids.push(inodes[i].nodeId);
                 }
+                console.log('for ' + token + ' we got ');
+                console.log(inodes);
+                console.log(ids);
+                console.log();
+
+                Node.find({ _id: { $in: ids }}, function(err, nodes) {
+                    finished[token] = true;
+                    console.log('for ' + token + ' we got ');
+                    console.log(nodes);
+                    console.log();
+                    if (nodes.length > 0) results.push(nodes);
+                    if (finished.check()) {
+                        if (results.length == 0) callback([]);
+                        console.log(results);
+                        topk(cartesian(results), NUM_RESULTS, callback);
+                    }
+                });
             }
         }
     }
 
-    
     for (var i = 0; i < tokens.length; i++) {
-        Node.find({ key: tokens[i] }, assemble(tokens[i], results, finished, callback));
+        InvertedNode.find({ term: tokens[i] }, 
+                          assemble(tokens[i], results, finished, callback));
     }
 }
-
-
-var a = { _id: 'a' };
-var b = { _id: 'b' };
-var c = { _id: 'c' };
-var d = { _id: 'd' };
-var e = { _id: 'e' };
-
-a.neighbors = [ b, c ];
-b.neighbors = [ a, d ];
-c.neighbors = [ a, d ];
-d.neighbors = [ b, c, e ];
-e.neighbors = [ d ];
 
 module.exports = searchengine;

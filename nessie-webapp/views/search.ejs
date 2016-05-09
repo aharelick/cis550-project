@@ -126,10 +126,7 @@
     }
 
     var translate = function(data) {
-      //TODO: remove this
-      var paths = [];
-      paths.push(data);
-      //var paths = data; //PUT THIS BACK IN COACH
+      var paths = data; //PUT THIS BACK IN COACH
       var formattedObj = {}
       var edgeCount = 0;
       formattedObj.nodes = [];
@@ -141,7 +138,7 @@
           var currID = paths[i][j]._id;
 
           //Make the node if it is new
-          if (!nodeExists(currID)) {
+          if (!nodeExists(currID, formattedObj)) {
             var node = {};
             node.id = currID;
             node.docID = paths[i][j].docId;
