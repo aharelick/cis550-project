@@ -72,7 +72,6 @@
           console.log(data);
           $('#sigma-container').empty();
           renderGraph(data);
-
         },
         error: function(jqXHR, textStatus, err) {
           console.log(err);
@@ -113,20 +112,18 @@
       s.refresh();
       s.startForceAtlas2();
 
-      function onClick(event) {
-        window.console.log("clicked!");
-        window.console.log(event)
-      } 
-
       //When a node is double clicked, the document is opened
       s.bind('doubleClickNode', function(e) {
           console.log(e.data.node.docID);
           window.open(e.data.node.docID);
       });
+
+      //Uncomment to make the quivering stop
+      //s.stopForceAtlas2();
     }
 
     var translate = function(data) {
-      //TODO: remove this
+      //TODO: remove this when Max uploads
       var paths = [];
       paths.push(data);
       //var paths = data; //PUT THIS BACK IN COACH
