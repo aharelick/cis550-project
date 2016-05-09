@@ -5,6 +5,7 @@ var router = express.Router();
 var User = require('../models/User');
 var Upload = require('../models/Upload');
 var Node = require('../models/Node');
+var InvertedNode = require('../models/InvertedNode');
 var aws = require('aws-sdk');
 var formidable = require('formidable');
 var xml2js = require('xml2js');
@@ -20,6 +21,9 @@ router.get('/dashboard', function(req, res, next) {
   return res.render('dashboard', { title: 'Nessie' });
 });
 
+router.get('/search', function(req, res, next) {
+  return res.render('search', {title: 'Search'});
+})
 
 
 router.get('/sign-s3', function(req, res, next) {
@@ -67,21 +71,24 @@ router.post('/search', function(req, res, next) {
         console.log(err);
       } else {
         var path = [];
-        recursiveUpToRoot(nodes[0], path, res);
+        if (nodes.length > 0) {
+          recursiveUpToRoot(nodes[0], path, res);
+        } else {
+          return res.json({message: "No matching nodes found"});
+        }
       }
     });
   });
 })
 
 var recursiveUpToRoot = function(node, path, res) {
-  console.log(node);
   path.push(node);
   if (node.parent == null) {
     return res.json(path);
   }
   Node.findOne({_id: node.parent}, function(err, parent) {
     recursiveUpToRoot(parent, path, res);
-  })
+  });
 }
 
 router.post('/create-upload', function(req, res, next) {
@@ -128,15 +135,22 @@ router.post('/create-upload', function(req, res, next) {
           } else {
 
             var nodes = [];
-            createNodes(fields.name, contents, null, writeResult._id, nodes);
+            var invertedNodes = [];
+            var parentNode = addNode(fields.name, null, writeResult._id, nodes, invertedNodes);
+            createNodes(contents, parentNode, writeResult._id, nodes, invertedNodes);
             Node.insertMany(nodes, function(err, writeResult) {
               if (err) {
-                console.log(err);
                 return res.sendStatus(500);
-              } else {
-                console.log(writeResult);
-                return res.json({success:true})
               }
+              InvertedNode.insertMany(invertedNodes, function(err, writeResult) {
+                if (err) {
+                  console.log(err);
+                  return res.sendStatus(500);
+                } else {
+                  console.log(writeResult);
+                  return res.json({success:true})
+                }
+              })
             });
           }
         });
@@ -146,25 +160,45 @@ router.post('/create-upload', function(req, res, next) {
 });
 
 // Iterate through the dataItem and add all entries to an inverted index
-var createNodes = function(key, value, parent, fileId, nodes) {
-  var currentNode = new Node({
-    key: key,
+var createNodes = function(value, parent, fileId, nodes, invertedNodes) {
+  if (Array.isArray(value)) {
+    value.forEach(function(currentVal, index) {
+      createNodes(currentVal, parent, fileId, nodes, invertedNodes);
+    });
+  }
+  else if (typeof value === 'object' && value != null) {
+    Object.keys(value).forEach(function(key, index, array) {
+      var node = addNode(key, parent, fileId, nodes, invertedNodes);
+      createNodes(value[key], node, fileId, nodes, invertedNodes);
+    });
+  } else {
+    addNode(value, parent, fileId, nodes, invertedNodes);
+  }
+}
+
+var addNode = function(key, parent, fileId, nodes, invertedNodes) {
+  var node = new Node({
+    key: key.toLowerCase(),
     docId: fileId,
     neighbors: [],
     parent: parent == null ? null : parent._id
   });
-  nodes.push(currentNode);
 
   if (parent != null) {
-    currentNode.neighbors.push(parent._id);
-    parent.neighbors.push(currentNode._id);
+    node.neighbors.push(parent._id);
+    parent.neighbors.push(node._id);
   }
 
-  if (typeof value === 'object') {
-    Object.keys(value).forEach(function(currentValue, index, array) {
-      createNodes(currentValue, value[currentValue], currentNode, fileId, nodes);
+  key.split(' ').forEach(function(term, index) {
+    var invertedNode = new InvertedNode({
+      term: term,
+      nodeId: node._id
     });
-  }
+    invertedNodes.push(invertedNode);
+  });
+
+  nodes.push(node);
+  return node;
 }
 
 router.post('/update-upload-status', function(req, res, next) {
