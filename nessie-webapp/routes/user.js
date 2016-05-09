@@ -8,14 +8,8 @@ var Node = require('../models/Node');
 var InvertedNode = require('../models/InvertedNode');
 var aws = require('aws-sdk');
 var formidable = require('formidable');
-<<<<<<< Updated upstream
 var xml2js     = require('xml2js');
 var Converter  = require("csvtojson").Converter;
-var search     = require('./search.js');
-=======
-var xml2js = require('xml2js');
-var Converter = require("csvtojson").Converter;
->>>>>>> Stashed changes
 
 /* GET index page. */
 router.get('/', function(req, res, next) {
@@ -26,14 +20,6 @@ router.get('/', function(req, res, next) {
 router.get('/dashboard', function(req, res, next) {
   return res.render('dashboard', { title: 'Nessie' });
 });
-
-<<<<<<< Updated upstream
-=======
-/* GET search results page*/
-router.get('/searchResults', function(req, res, next) {
-  return res.render('searchResults', {test : "hello!"});
-});
->>>>>>> Stashed changes
 
 router.get('/search', function(req, res, next) {
   return res.render('search', {title: 'Search'});
