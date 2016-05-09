@@ -89,7 +89,18 @@
     })
 
     var searchTerm = function(input) {
-      console.log(input);
+      $.ajax({
+        url: '/user/search',
+        type: 'POST',
+        data: {searchTerms: input},
+        conentType: 'application/json',
+        success: function(data, textStatus, jqXHR) {
+          console.log(data);
+        },
+        error: function(jqXHR, textStatus, err) {
+          console.log(err);
+        }
+      })
     }
 
     $('#file_input').change(function () {

@@ -4,7 +4,7 @@ var express = require('express');
 var router = express.Router();
 var User = require('../models/User');
 var Upload = require('../models/Upload');
-var Pair = require('../models/Pair');
+var Node = require('../models/Node');
 var aws = require('aws-sdk');
 var formidable = require('formidable');
 var xml2js = require('xml2js');
@@ -20,10 +20,7 @@ router.get('/dashboard', function(req, res, next) {
   return res.render('dashboard', { title: 'Nessie' });
 });
 
-/* GET seach page */
-router.get('/search', function(req, res, next) {
-  return res.render('search', {title: 'Search'});
-})
+
 
 router.get('/sign-s3', function(req, res, next) {
   var uploadId = req.query.upload_id;
@@ -62,7 +59,18 @@ router.get('/sign-s3', function(req, res, next) {
   });
 });
 
-
+router.post('/search', function(req, res, next) {
+  terms = req.body.searchTerms.split(' ');
+  terms.forEach(function(term, index, array) {
+    Pair.find({key: term}, function(err, pairs) {
+      if (err) {
+        console.log(err);
+      } else {
+        res.json(pairs);
+      }
+    })
+  })
+})
 
 router.post('/create-upload', function(req, res, next) {
 
@@ -107,9 +115,10 @@ router.post('/create-upload', function(req, res, next) {
             return res.sendStatus(500);
           } else {
 
-            var entries = [];
-            addEntries(fields.name, contents, writeResult._id, fields.name, entries);
-            Pair.insertMany(entries, function(err, writeResult) {
+            var nodes = [];
+            createNodes(fields.name, contents, null, writeResult._id, nodes);
+            console.log(nodes);
+            Node.insertMany(nodes, function(err, writeResult) {
               if (err) {
                 console.log(err);
                 return res.sendStatus(500);
@@ -126,24 +135,24 @@ router.post('/create-upload', function(req, res, next) {
 });
 
 // Iterate through the dataItem and add all entries to an inverted index
-var addEntries = function(key, value, fileId, currentPath, entries) {
-  if (Array.isArray(value)) {
-    value.forEach(function(currentValue, index, array) {
-      addEntries(key + "[" + index + "]", value[index], fileId, currentPath + "[" + index + "]", entries);
-    });
+var createNodes = function(key, value, parent, fileId, nodes) {
+  var currentNode = new Node({
+    key: key,
+    docId: fileId,
+    neighbors: [],
+    parent: parent == null ? null : parent._id
+  });
+  nodes.push(currentNode);
+
+  if (parent != null) {
+    currentNode.neighbors.push(parent._id);
+    parent.neighbors.push(currentNode._id);
   }
-  else if (typeof value === 'object') {
+
+  if (typeof value === 'object') {
     Object.keys(value).forEach(function(currentValue, index, array) {
-      addEntries(currentValue, value[currentValue], fileId, currentPath + "." + currentValue, entries);
+      createNodes(currentValue, value[currentValue], currentNode, fileId, nodes);
     });
-  }
-  else {
-    entries.push(new Pair({
-      key: key,
-      value: value,
-      docId: fileId,
-      path: currentPath
-    }));
   }
 }
 
