@@ -10,6 +10,7 @@ var aws = require('aws-sdk');
 var formidable = require('formidable');
 var xml2js     = require('xml2js');
 var Converter  = require("csvtojson").Converter;
+var search     = require('./search.js');
 
 
 /* GET index page. */
@@ -22,8 +23,15 @@ router.get('/dashboard', function(req, res, next) {
   return res.render('dashboard', { title: 'Nessie' });
 });
 
+
 router.get('/search', function(req, res, next) {
-  return res.render('search', {title: 'Search'});
+    return res.render('search', { title: 'Search' });
+});
+router.post('/search', function(req, res, next) {
+  var query = req.body.searchTerms;
+  search(query, function(paths) {
+    res.json(paths);
+  });
 })
 
 
@@ -63,34 +71,6 @@ router.get('/sign-s3', function(req, res, next) {
     });
   });
 });
-
-router.post('/search', function(req, res, next) {
-  terms = req.body.searchTerms.split(' ');
-  terms.forEach(function(term, index, array) {
-    Node.find({key: term}, function(err, nodes) {
-      if (err) {
-        console.log(err);
-      } else {
-        var path = [];
-        if (nodes.length > 0) {
-          recursiveUpToRoot(nodes[0], path, res);
-        } else {
-          return res.json({message: "No matching nodes found"});
-        }
-      }
-    });
-  });
-})
-
-var recursiveUpToRoot = function(node, path, res) {
-  path.push(node);
-  if (node.parent == null) {
-    return res.json(path);
-  }
-  Node.findOne({_id: node.parent}, function(err, parent) {
-    recursiveUpToRoot(parent, path, res);
-  });
-}
 
 router.post('/create-upload', function(req, res, next) {
 
@@ -179,6 +159,7 @@ var createNodes = function(value, parent, fileId, nodes, invertedNodes) {
 }
 
 var addNode = function(key, parent, fileId, nodes, invertedNodes) {
+  key = '' + key;
   var node = new Node({
     key: key.toLowerCase(),
     docId: fileId,
