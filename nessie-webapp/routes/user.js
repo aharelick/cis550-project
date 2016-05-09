@@ -62,15 +62,27 @@ router.get('/sign-s3', function(req, res, next) {
 router.post('/search', function(req, res, next) {
   terms = req.body.searchTerms.split(' ');
   terms.forEach(function(term, index, array) {
-    Pair.find({key: term}, function(err, pairs) {
+    Node.find({key: term}, function(err, nodes) {
       if (err) {
         console.log(err);
       } else {
-        res.json(pairs);
+        var path = [];
+        recursiveUpToRoot(nodes[0], path, res);
       }
-    })
-  })
+    });
+  });
 })
+
+var recursiveUpToRoot = function(node, path, res) {
+  console.log(node);
+  path.push(node);
+  if (node.parent == null) {
+    return res.json(path);
+  }
+  Node.findOne({_id: node.parent}, function(err, parent) {
+    recursiveUpToRoot(parent, path, res);
+  })
+}
 
 router.post('/create-upload', function(req, res, next) {
 
@@ -117,7 +129,6 @@ router.post('/create-upload', function(req, res, next) {
 
             var nodes = [];
             createNodes(fields.name, contents, null, writeResult._id, nodes);
-            console.log(nodes);
             Node.insertMany(nodes, function(err, writeResult) {
               if (err) {
                 console.log(err);
