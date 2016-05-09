@@ -7,3 +7,11 @@
 # Eclipse Core
 .project
 
+/bin/
+/target/
+
+# eclipse
+.metadata
+.classpath
+.settings
+.recommenders

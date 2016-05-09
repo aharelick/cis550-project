@@ -8,8 +8,9 @@ var Node = require('../models/Node');
 var InvertedNode = require('../models/InvertedNode');
 var aws = require('aws-sdk');
 var formidable = require('formidable');
-var xml2js = require('xml2js');
-var Converter = require("csvtojson").Converter;
+var xml2js     = require('xml2js');
+var Converter  = require("csvtojson").Converter;
+var search     = require('./search.js');
 
 /* GET index page. */
 router.get('/', function(req, res, next) {
@@ -20,6 +21,7 @@ router.get('/', function(req, res, next) {
 router.get('/dashboard', function(req, res, next) {
   return res.render('dashboard', { title: 'Nessie' });
 });
+
 
 router.get('/search', function(req, res, next) {
   return res.render('search', {title: 'Search'});
@@ -158,6 +160,7 @@ router.post('/create-upload', function(req, res, next) {
     });
   });
 });
+
 
 // Iterate through the dataItem and add all entries to an inverted index
 var createNodes = function(value, parent, fileId, nodes, invertedNodes) {
