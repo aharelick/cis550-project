@@ -1,14 +1,15 @@
-var fs = require('fs');
-var util = require('util');
-var express = require('express');
-var router = express.Router();
-var User = require('../models/User');
-var Upload = require('../models/Upload');
-var Node = require('../models/Node');
-var aws = require('aws-sdk');
-//var formidable = require('formidable');
-var xml2js = require('xml2js');
-var Converter = require("csvtojson").Converter;
+var fs         = require('fs');
+var util       = require('util');
+var express    = require('express');
+var router     = express.Router();
+var User       = require('../models/User');
+var Upload     = require('../models/Upload');
+var Node       = require('../models/Node');
+var aws        = require('aws-sdk');
+var formidable = require('formidable');
+var xml2js     = require('xml2js');
+var Converter  = require("csvtojson").Converter;
+var search     = require('./search.js');
 
 /* GET index page. */
 router.get('/', function(req, res, next) {
@@ -65,31 +66,12 @@ router.get('/sign-s3', function(req, res, next) {
 });
 
 router.post('/search', function(req, res, next) {
-  terms = req.body.searchTerms.split(' ');
-  terms.forEach(function(term, index, array) {
-    Node.find({key: term}, function(err, nodes) {
-      if (err) {
-        console.log(err);
-      } else {
-        var path = [];
-        recursiveUpToRoot(nodes[0], path, res);
-      }
-    });
+  var query = 'GlossSee title'; // req.body.searchTerms;
+  search(query, function(paths) {
+      res.json(paths);
   });
 })
 
-var recursiveUpToRoot = function(node, path, res) {
-  console.log(node);
-  path.push(node);
-  if (node.parent == null) {
-    return res.json(path);
-  }
-  Node.findOne({_id: node.parent}, function(err, parent) {
-    recursiveUpToRoot(parent, path, res);
-  })
-}
-
-/*
 router.post('/create-upload', function(req, res, next) {
 
   // Create the tree and store it in Mongo
@@ -151,7 +133,6 @@ router.post('/create-upload', function(req, res, next) {
   });
 });
 
-*/
 
 // Iterate through the dataItem and add all entries to an inverted index
 var createNodes = function(key, value, parent, fileId, nodes) {
