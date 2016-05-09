@@ -1,15 +1,16 @@
-var fs         = require('fs');
-var util       = require('util');
-var express    = require('express');
-var router     = express.Router();
-var User       = require('../models/User');
-var Upload     = require('../models/Upload');
-var Node       = require('../models/Node');
-var aws        = require('aws-sdk');
+var fs = require('fs');
+var util = require('util');
+var express = require('express');
+var router = express.Router();
+var User = require('../models/User');
+var Upload = require('../models/Upload');
+var Node = require('../models/Node');
+var InvertedNode = require('../models/InvertedNode');
+var aws = require('aws-sdk');
 var formidable = require('formidable');
 var xml2js     = require('xml2js');
 var Converter  = require("csvtojson").Converter;
-var search     = require('./search.js');
+
 
 /* GET index page. */
 router.get('/', function(req, res, next) {
@@ -21,11 +22,9 @@ router.get('/dashboard', function(req, res, next) {
   return res.render('dashboard', { title: 'Nessie' });
 });
 
-/* GET search results page*/
-router.get('/searchResults', function(req, res, next) {
-  return res.render('searchResults', {});
-});
-
+router.get('/search', function(req, res, next) {
+  return res.render('search', {title: 'Search'});
+})
 
 
 router.get('/sign-s3', function(req, res, next) {
@@ -66,11 +65,32 @@ router.get('/sign-s3', function(req, res, next) {
 });
 
 router.post('/search', function(req, res, next) {
-  var query = 'GlossSee title'; // req.body.searchTerms;
-  search(query, function(paths) {
-      res.json(paths);
+  terms = req.body.searchTerms.split(' ');
+  terms.forEach(function(term, index, array) {
+    Node.find({key: term}, function(err, nodes) {
+      if (err) {
+        console.log(err);
+      } else {
+        var path = [];
+        if (nodes.length > 0) {
+          recursiveUpToRoot(nodes[0], path, res);
+        } else {
+          return res.json({message: "No matching nodes found"});
+        }
+      }
+    });
   });
 })
+
+var recursiveUpToRoot = function(node, path, res) {
+  path.push(node);
+  if (node.parent == null) {
+    return res.json(path);
+  }
+  Node.findOne({_id: node.parent}, function(err, parent) {
+    recursiveUpToRoot(parent, path, res);
+  });
+}
 
 router.post('/create-upload', function(req, res, next) {
 
@@ -116,15 +136,22 @@ router.post('/create-upload', function(req, res, next) {
           } else {
 
             var nodes = [];
-            createNodes(fields.name, contents, null, writeResult._id, nodes);
+            var invertedNodes = [];
+            var parentNode = addNode(fields.name, null, writeResult._id, nodes, invertedNodes);
+            createNodes(contents, parentNode, writeResult._id, nodes, invertedNodes);
+            createLinks(invertedNodes);
             Node.insertMany(nodes, function(err, writeResult) {
               if (err) {
-                console.log(err);
                 return res.sendStatus(500);
-              } else {
-                console.log(writeResult);
-                return res.json({success:true})
               }
+              InvertedNode.insertMany(invertedNodes, function(err, writeResult) {
+                if (err) {
+                  console.log(err);
+                  return res.sendStatus(500);
+                } else {
+                  return res.json({success:true})
+                }
+              })
             });
           }
         });
@@ -135,25 +162,58 @@ router.post('/create-upload', function(req, res, next) {
 
 
 // Iterate through the dataItem and add all entries to an inverted index
-var createNodes = function(key, value, parent, fileId, nodes) {
-  var currentNode = new Node({
-    key: key,
+var createNodes = function(value, parent, fileId, nodes, invertedNodes) {
+  if (Array.isArray(value)) {
+    value.forEach(function(currentVal, index) {
+      createNodes(currentVal, parent, fileId, nodes, invertedNodes);
+    });
+  }
+  else if (typeof value === 'object' && value != null) {
+    Object.keys(value).forEach(function(key, index, array) {
+      var node = addNode(key, parent, fileId, nodes, invertedNodes);
+      createNodes(value[key], node, fileId, nodes, invertedNodes);
+    });
+  } else {
+    addNode(value, parent, fileId, nodes, invertedNodes);
+  }
+}
+
+var addNode = function(key, parent, fileId, nodes, invertedNodes) {
+  var node = new Node({
+    key: key.toLowerCase(),
     docId: fileId,
     neighbors: [],
     parent: parent == null ? null : parent._id
   });
-  nodes.push(currentNode);
 
   if (parent != null) {
-    currentNode.neighbors.push(parent._id);
-    parent.neighbors.push(currentNode._id);
+    node.neighbors.push(parent._id);
+    parent.neighbors.push(node._id);
   }
 
-  if (typeof value === 'object') {
-    Object.keys(value).forEach(function(currentValue, index, array) {
-      createNodes(currentValue, value[currentValue], currentNode, fileId, nodes);
+  key.split(' ').forEach(function(term, index) {
+    var invertedNode = new InvertedNode({
+      term: term,
+      nodeId: node._id
     });
-  }
+    invertedNodes.push(invertedNode);
+  });
+
+  nodes.push(node);
+  return node;
+}
+
+var createLinks = function(invertedNodes) {
+  invertedNodes.forEach(function(value, index) {
+    InvertedNode.find({term: value.term}, function(err, invertedNodes) {
+      console.log(invertedNodes);
+      nodeIds = [];
+      invertedNodes.forEach(function(val, index) {
+        nodeIds.push(val.nodeId);
+      })
+      console.log(nodeIds);
+    })
+  })
 }
 
 router.post('/update-upload-status', function(req, res, next) {
@@ -210,10 +270,6 @@ router.get('/get-uploads', function(req, res, next) {
     }
     return res.json(uploads);
   });
-});
-
-router.get('/search', function(req, res, next) {
-  return res.render('search', { title: 'Search' });
 });
 
 
