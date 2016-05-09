@@ -4,7 +4,7 @@ var express = require('express');
 var router = express.Router();
 var User = require('../models/User');
 var Upload = require('../models/Upload');
-var DataItem = require('../models/DataItem');
+var Pair = require('../models/Pair');
 var aws = require('aws-sdk');
 var formidable = require('formidable');
 var xml2js = require('xml2js');
@@ -19,6 +19,11 @@ router.get('/', function(req, res, next) {
 router.get('/dashboard', function(req, res, next) {
   return res.render('dashboard', { title: 'Nessie' });
 });
+
+/* GET seach page */
+router.get('/search', function(req, res, next) {
+  return res.render('search', {title: 'Search'});
+})
 
 router.get('/sign-s3', function(req, res, next) {
   var uploadId = req.query.upload_id;
@@ -66,6 +71,7 @@ router.post('/create-upload', function(req, res, next) {
   form.parse(req, function(err, fields, files) {
     var contents;
 
+    // Parse the document and convert it to a json object
     if (fields.type === 'application/json') {
       contents = JSON.parse(fs.readFileSync(files.file.path));
     }
@@ -81,42 +87,65 @@ router.post('/create-upload', function(req, res, next) {
         contents = result;
       });
     }
-    
-    DataItem.find({fileName: fields.name}, function(err, dataItems) {
-      if (dataItems.length > 0) {
-        console.log(util.inspect(dataItems, false, null));
+
+    // Look for the document in the database, if it isn't already present then add it
+    Upload.find({name: fields.name}, function(err, uploads) {
+      if (uploads.length > 0) {
+        console.log(util.inspect(uploads, false, null));
         return res.json({message: 'Item with given filename is already in DB'})
       } else {
-        // If file with name wasn't already in Mongo, then add it
-        dataItem = new DataItem({
-          fileName: fields.name,
-          data: contents
+
+        var upload = new Upload({
+          user: req.user.id,
+          status: 'Created Upload',
+          name: fields.name,
+          type: fields.type
         });
-        dataItem.save(function(err) {
+        upload.save(function(err, writeResult) {
           if (err) {
             console.log(err);
             return res.sendStatus(500);
+          } else {
+
+            var entries = [];
+            addEntries(fields.name, contents, writeResult._id, fields.name, entries);
+            Pair.insertMany(entries, function(err, writeResult) {
+              if (err) {
+                console.log(err);
+                return res.sendStatus(500);
+              } else {
+                console.log(writeResult);
+                return res.json({success:true})
+              }
+            });
           }
         });
       }
-    })
+    });
   });
-
-  // TODO: check if this upload already exists
-  /*var upload = new Upload({
-    user: req.user.id,
-    status: 'Created Upload',
-    name: name,
-    type: type
-  });
-  upload.save(function(err) {
-    if (err) {
-      return res.sendStatus(500);
-    } else {
-      return res.json({ upload_id: upload.id });
-    }
-  });*/
 });
+
+// Iterate through the dataItem and add all entries to an inverted index
+var addEntries = function(key, value, fileId, currentPath, entries) {
+  if (Array.isArray(value)) {
+    value.forEach(function(currentValue, index, array) {
+      addEntries(key + "[" + index + "]", value[index], fileId, currentPath + "[" + index + "]", entries);
+    });
+  }
+  else if (typeof value === 'object') {
+    Object.keys(value).forEach(function(currentValue, index, array) {
+      addEntries(currentValue, value[currentValue], fileId, currentPath + "." + currentValue, entries);
+    });
+  }
+  else {
+    entries.push(new Pair({
+      key: key,
+      value: value,
+      docId: fileId,
+      path: currentPath
+    }));
+  }
+}
 
 router.post('/update-upload-status', function(req, res, next) {
   // TODO: validate these params, make sure user is editing own upload

@@ -21,7 +21,11 @@
         <div class="field">
           <input id="file_input" class="ui input" type="file" name="file-input">
         </div>
-        <button class="ui button" action="submit">Submit Data File</button>
+        <button id="uploadButton" class="ui button" action="submit">Submit Data File</button>
+        <div class="field">
+          <input id="search_input" class="ui input" name="search-input">
+        </div>
+        <button id="searchButton" class="ui button" action="submit">Search files</button>
       </div>
       <div class="ui teal progress" id="progress">
         <div class="bar">
@@ -66,16 +70,39 @@
       });
     }
 
+    $('#search_input').on('input', function() {
+      var input = $('#search_input').val();
+      if (input) {
+        $('#searchButton').addClass('teal');
+      } else {
+        $('#searchButton').removeClass('teal');
+      }
+    })
+
+    $('#searchButton').click(function() {
+      var input = $('#search_input').val();
+      if (input) {
+        searchTerm(input);
+      } else {
+        console.log('Enter search terms');
+      }
+    })
+
+    var searchTerm = function(input) {
+      console.log(input);
+    }
+
     $('#file_input').change(function () {
       var file = $('#file_input')[0].files[0];
       if (!file) {
-        $('.ui.form .ui.button').removeClass('teal')
+        $('#uploadButton').removeClass('teal')
       } else {
-        $('.ui.form .ui.button').addClass('teal')
+        $('#uploadButton').addClass('teal')
       }
     });
 
-    $('.ui.form button').click(function() {
+
+    $('#uploadButton').click(function() {
       var file = $('#file_input')[0].files[0];
       if (!file) {
         console.log('no file selected');
