@@ -80,7 +80,7 @@
     }
 
     var renderGraph = function(data) {
-      if (data.message != null) {
+      if (data.length == 0) {
         $('#sigma-container').text("No results were found");
       }
       console.log("rendering....");
