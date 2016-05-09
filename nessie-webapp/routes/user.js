@@ -139,7 +139,7 @@ router.post('/create-upload', function(req, res, next) {
             var invertedNodes = [];
             var parentNode = addNode(fields.name, null, writeResult._id, nodes, invertedNodes);
             createNodes(contents, parentNode, writeResult._id, nodes, invertedNodes);
-            createLinks(invertedNodes);
+            createLinks(nodes);
             Node.insertMany(nodes, function(err, writeResult) {
               if (err) {
                 return res.sendStatus(500);
@@ -193,7 +193,7 @@ var addNode = function(key, parent, fileId, nodes, invertedNodes) {
 
   key.split(' ').forEach(function(term, index) {
     var invertedNode = new InvertedNode({
-      term: term,
+      term: term.toLowerCase(),
       nodeId: node._id
     });
     invertedNodes.push(invertedNode);
@@ -203,17 +203,30 @@ var addNode = function(key, parent, fileId, nodes, invertedNodes) {
   return node;
 }
 
-var createLinks = function(invertedNodes) {
-  invertedNodes.forEach(function(value, index) {
-    InvertedNode.find({term: value.term}, function(err, invertedNodes) {
-      console.log(invertedNodes);
-      nodeIds = [];
-      invertedNodes.forEach(function(val, index) {
-        nodeIds.push(val.nodeId);
-      })
-      console.log(nodeIds);
-    })
-  })
+var createLinks = function(nodes) {
+  nodes.forEach(function(node, index) {
+    terms = node.key.split(' ');
+    terms.forEach(function(term, index) {
+      InvertedNode.find({term: term}, function(err, invertedNeighbors) {
+        neighborIds = [];
+        invertedNeighbors.forEach(function(invertedNeighbor, index) {
+          neighborIds.push(invertedNeighbor.nodeId);
+        })
+        
+        Node.find({_id: {$in: neighborIds}}, function(err, neighbors) {
+          neighbors.forEach(function(neighbor, index) {
+            if (!(neighbor._id in node.neighbors) && !(node._id in neighbor.neighbors)) {
+              node.neighbors.push(neighbor._id);
+              neighbor.neighbors.push(node._id);
+            }
+          });
+          Node.insertMany(neighbors, function(err, writeResult) {
+            console.log("Success");
+          });
+        });
+      });
+    });
+  });
 }
 
 router.post('/update-upload-status', function(req, res, next) {
