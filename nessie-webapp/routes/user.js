@@ -22,7 +22,6 @@ router.get('/dashboard', function(req, res, next) {
   return res.render('dashboard', { title: 'Nessie' });
 });
 
-
 router.get('/search', function(req, res, next) {
   return res.render('search', {title: 'Search'});
 })

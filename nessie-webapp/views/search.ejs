@@ -3,7 +3,7 @@
 <head>
   <% include ./partials/head %>
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/async/1.5.2/async.min.js"></script>
-  <style>
+  <style type="text/css">
     main .ui.container {
       margin-top: 50px;
     }
@@ -12,6 +12,14 @@
       width: 100%;
       height: 100%;
     }
+
+    #sigma-container {
+      max-width: 100%;
+      height: 400px;
+      margin: auto;
+      border: 2px solid;
+    }
+
   </style>
 </head>
 <body>
@@ -28,8 +36,12 @@
         <button id="searchButton" class="ui button middle aligned center" action="submit">Search files</button>
       </div>
       <div id="container"></div>
+      <div id="sigma-container"></div>
     </div>
   </main>
+  <script src="/sigma/sigma.js"></script>
+  <script src="/sigma/plugins/sigma.parsers.json.min.js"></script>
+  <script src="/sigma/plugins/sigma.layout.forceAtlas2.min.js"></script>
   <script>
     
     $('#search_input').on('input', function() {
@@ -58,12 +70,117 @@
         conentType: 'application/json',
         success: function(data, textStatus, jqXHR) {
           console.log(data);
+          $('#sigma-container').empty();
+          renderGraph(data);
+
         },
         error: function(jqXHR, textStatus, err) {
           console.log(err);
         }
       })
     }
+
+    var renderGraph = function(data) {
+      if (data.message != null) {
+        $('#sigma-container').text("No results were found");
+      }
+      console.log("rendering....");
+      var formattedObj = translate(data, formattedObj);
+      console.log(formattedObj);
+
+      s = new sigma({
+       graph: formattedObj,
+       container: 'sigma-container',
+       renderer: {
+        container: document.getElementById('sigma-container'),
+        type: 'canvas'
+       },
+       settings: {
+        minNodeSize: 8,
+        maxNodeSize: 8
+       }
+      });
+
+      var nodes = s.graph.nodes();
+      var len = nodes.length;
+
+      for (var i = 0; i < len; i++) {
+        nodes[i].x = Math.random();
+        nodes[i].y = Math.random();
+        nodes[i].size = s.graph.degree(nodes[i].id);
+        nodes[i].color = nodes[i].center ? '#333' : '#666';
+      }
+      s.refresh();
+      s.startForceAtlas2();
+
+      function onClick(event) {
+        window.console.log("clicked!");
+        window.console.log(event)
+      } 
+
+      //When a node is double clicked, the document is opened
+      s.bind('doubleClickNode', function(e) {
+          console.log(e.data.node.docID);
+          window.open(e.data.node.docID);
+      });
+    }
+
+    var translate = function(data) {
+      //TODO: remove this
+      var paths = [];
+      paths.push(data);
+      //var paths = data; //PUT THIS BACK IN COACH
+      var formattedObj = {}
+      var edgeCount = 0;
+      formattedObj.nodes = [];
+      formattedObj.edges = [];
+
+      for (var i in paths) {
+        var prevId = null;
+        for (var j = 0; j < paths[i].length; j++) {
+          var currID = paths[i][j]._id;
+
+          //Make the node if it is new
+          if (!nodeExists(currID)) {
+            var node = {};
+            node.id = currID;
+            node.docID = paths[i][j].docId;
+            node.label = paths[i][j].key;
+            formattedObj.nodes.push(node);
+          }
+
+          //Add the edge to prev node
+          if (j > 0) {
+            //add an edge to preceeding node
+            var edge = {};
+            edge.id = edgeCount;
+            edgeCount++;
+            edge.source = prevId;
+            edge.target = currID;
+            formattedObj.edges.push(edge);
+          }
+
+          //Update the previous pointer in path
+          prevId = currID;
+        }
+      }
+      return formattedObj;
+    }
+
+    var nodeExists = function(id, formattedObj) {
+      if (formattedObj != null) {
+        if (formattedObj.nodes != null) {
+          for (var i in formattedObj.nodes) {
+            if (formattedObj.nodes[i].id === id) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+
 
   </script>
 </body>
