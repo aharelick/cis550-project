@@ -13,7 +13,9 @@ var Converter  = require("csvtojson").Converter;
 var async  = require('async');
 var kue = require('kue');
 
-var jobs = kue.createQueue();
+var jobs = kue.createQueue({
+  redis: process.env.REDIS_URL || 'redis://localhost:6379'
+});
 
 
 /* GET index page. */

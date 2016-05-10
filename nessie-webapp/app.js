@@ -39,14 +39,7 @@ if (app.get('env') === 'development') {
   }
 }
 
-kue.redis.createClient = function() {
-  var redisUrl = url.parse(config.REDIS_URL);
-  var client = redis.createClient(redisUrl.port, redisUrl.hostname);
-  if (redisUrl.auth) {
-    client.auth(redisUrl.auth.split(":")[1]);
-  }
-  return client;
-};
+
 /**
  * Connect to MongoDB.
  */
@@ -61,7 +54,7 @@ mongoose.connection.on('error', function() {
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-// app.use(logger('dev'));
+app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(expressValidator());

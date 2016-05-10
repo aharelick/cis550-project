@@ -13,16 +13,9 @@ mongoose.connection.on('error', function() {
 });
 
 
-kue.redis.createClient = function() {
-  var redisUrl = url.parse(process.env.REDIS_URL || 'redis://localhost:6379');
-  var client = redis.createClient(redisUrl.port, redisUrl.hostname);
-  if (redisUrl.auth) {
-    client.auth(redisUrl.auth.split(":")[1]);
-  }
-  return client;
-};
-
-var jobs = kue.createQueue();
+var jobs = kue.createQueue({
+  redis: process.env.REDIS_URL || 'redis://localhost:6379'
+});
 
 // see https://github.com/learnBoost/kue/ for how to do more than one job at a time
 jobs.process('upload', function(job, done) {
