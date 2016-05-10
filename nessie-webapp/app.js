@@ -13,7 +13,7 @@ var aws = require('aws-sdk');
 require('./config/pass')(passport);
 var kue = require('kue');
 var url = require('url');
-//var redis = require('redis');
+var redis = require('kue/node_modules/redis');
 
 var unauthenticatedRoutes = require('./routes/unauthenticated');
 var userRoutes = require('./routes/user');
@@ -35,17 +35,10 @@ if (app.get('env') === 'development') {
   config = {
     MONGODB_URI: process.env.MONGODB_URI,
     SESSION_SECRET: process.env.SESSION_SECRET,
+    REDIS_URL: process.env.REDIS_URL
   }
 }
 
-//kue.redis.createClient = function() {
-//  var redisUrl = url.parse(config.REDIS_URL);
-//  var client = kue.redis.createClient(redisUrl.port, redisUrl.hostname);
-//  if (redisUrl.auth) {
-//    client.auth(redisUrl.auth.split(":")[1]);
-//  }
-//  return client;
-//};
 
 /**
  * Connect to MongoDB.
@@ -61,7 +54,7 @@ mongoose.connection.on('error', function() {
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-//app.use(logger('dev'));
+app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(expressValidator());
