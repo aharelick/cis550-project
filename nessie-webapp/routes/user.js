@@ -12,6 +12,7 @@ var xml2js     = require('xml2js');
 var Converter  = require("csvtojson").Converter;
 var async  = require('async');
 var kue = require('kue');
+var search = require('./search.js');
 
 var jobs = kue.createQueue({
   redis: process.env.REDIS_URL || 'redis://localhost:6379'
