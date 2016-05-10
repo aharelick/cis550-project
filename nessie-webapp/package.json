@@ -21,11 +21,13 @@
     "express-session": "^1.13.0",
     "express-validator": "^2.20.3",
     "formidable": "^1.0.17",
+    "kue": "^0.10.5",
     "mongoose": "^4.4.14",
     "morgan": "~1.6.1",
     "papaparse": "^4.1.2",
     "passport": "^0.3.2",
     "passport-local": "^1.0.0",
+    "redis": "^2.6.0-2",
     "serve-favicon": "~2.3.0",
     "xml2js": "^0.4.16"
   }

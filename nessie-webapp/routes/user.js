@@ -11,6 +11,10 @@ var formidable = require('formidable');
 var xml2js     = require('xml2js');
 var Converter  = require("csvtojson").Converter;
 var async  = require('async');
+var search = require('./search.js');
+var kue = require('kue');
+
+var jobs = kue.createQueue();
 
 
 /* GET index page. */
@@ -74,6 +78,21 @@ router.get('/sign-s3', function(req, res, next) {
 
 router.post('/create-upload', function(req, res, next) {
 
+
+  var job = jobs.create('crawl', {
+    text: 'poop'
+  });
+
+  job.on('complete', function(){
+    console.log("Job complete");
+  }).on('failed', function(){
+    console.log("Job failed");
+  }).on('progress', function(progress){
+    console.log('job #' + job.id + ' ' + progress + '% complete');
+  });
+
+  job.save();
+
   // Create the tree and store it in Mongo
   var form = new formidable.IncomingForm();
   form.parse(req, function(err, fields, files) {
@@ -102,7 +121,7 @@ router.post('/create-upload', function(req, res, next) {
       function(callback) {
         Upload.find({name: fields.name}, function(err, uploads) {
           if (uploads.length > 0) {
-            return callback(err);
+            return callback('File already exists.');
           } else {
             callback(null, uploads);
           }
@@ -186,7 +205,7 @@ router.post('/create-upload', function(req, res, next) {
           callback(err);
         });
       }
-      ], 
+      ],
       function(err, result) {
         if (err) {
           return res.json({message: 'Failure to upload file'});
