@@ -151,7 +151,9 @@
             edgeCount++;
             edge.source = prevId;
             edge.target = currID;
-            formattedObj.edges.push(edge);
+            if (!edgeExists(prevId, currID, formattedObj)) {
+                formattedObj.edges.push(edge);
+            }
           }
 
           //Update the previous pointer in path
@@ -172,6 +174,15 @@
         }
       }
       return false;
+    }
+
+    var edgeExists = function(from, to, formattedObj) {
+        for (var i = 0; i < formattedObj.edges.length; i++) {
+            var edge = formattedObj.edges[i];
+            if (edge.source == from && edge.target == to) return true;
+            if (edge.target == from && edge.source == to) return true;
+        }
+        return false;
     }
 
 

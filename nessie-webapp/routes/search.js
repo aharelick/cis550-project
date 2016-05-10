@@ -1,7 +1,7 @@
 var Node         = require('../models/Node.js');
 var InvertedNode = require('../models/InvertedNode.js');
 
-var NUM_RESULTS = 5;
+var NUM_RESULTS = 10;
 
 var getPaths = function(start, end) {
     start._depth   = 0;
@@ -35,76 +35,89 @@ var getPaths = function(start, end) {
     return paths;
 }
 
-var MAX_DEPTH = 20;
+var MAX_DEPTH = 10;
 var search = function(start, end, callback) {
+    if (end.neighbors.indexOf(start._id) != -1) {
+        callback([[ start, end ]]);
+        return;
+    }
     var seen = [];
     var done = [];
     done[start._id] = false;
 
-    start._depth   = Number.MAX_VALUE;
+    start._depth   = 0;
     start._parents = [];
 
     end._depth     = Number.MAX_VALUE;
     end._parents   = [];
     seen[end._id]  = end;
 
-    dfs(start, end, null, seen, 0, done, function(node) {
+    dfs(start, null, seen, done, function() {
         for (var key in done) {
-            if (!done[key]) return;
+            if (done[key] === false) return;
         }
-        callback(generate(end));
+        var paths = generate(end);
+        var out   = [];
+        for (var i = 0; i < paths.length; i++) {
+            if (paths[i].length > 1) out.push(paths[i]);
+        }
+        callback(out);
     });
 }
 
-var dfs = function(start, end, last, seen, depth, done, callback) {
-    var print = start.key;
-    if (last != null) {
-        print = print + '\t' + last.key;
-    }
-    for (var i = 0; i < depth; i++) {
-        print = '\t' + print;
-    }
-    console.log(print);
+var dfs = function(start, last, seen, done, callback) {
     seen[start._id] = start;
-    if (depth == MAX_DEPTH) {
+
+    var depth;
+    if (last != null) depth = last._depth + 1;
+    else              depth = 0;
+
+
+    if (depth === MAX_DEPTH) {
         done[start._id] = true;
-        callback(start);
+        callback();
         return;
     }
-
-    if (start._depth > depth) {
+    if (depth < start._depth) {
         start._depth = depth;
-        if (last != null) start._parents = [ last ];
-        else              start._parents = [ ];
-    } else if (start._depth == depth) {
+        if (last !== null) start._parents = [ last ];
+        else               start._parents = [ ];
+    } else if (depth === start._depth && last !== null) {
         start._parents.push(last);
-    } else {
+    } else if (depth > start._depth) {
         done[start._id] = true;
-        callback(start);
+        callback();
         return;
     }
-
+        
     for (var i = 0; i < start.neighbors.length; i++) {
+
         done[start.neighbors[i]] = false;
+
         if (start.neighbors[i] in seen) {
-            dfs(seen[start.neighbors[i]], end, start, seen, depth + 1, done, callback);
+            dfs(seen[start.neighbors[i]], start, seen, done, callback);
         } else {
             Node.findOne({ _id: start.neighbors[i] }, function(err, node) {
+                if (node._id in seen) {
+                    dfs(seen[node._id], start, seen,  done, callback);
+                    return;
+                }
                 node._depth   = Number.MAX_VALUE;
-                node._parents = [];
-                dfs(node, end, start, seen, depth + 1, done, callback);
+                node._parents = [ ];
+                dfs(node, start, seen, done, callback);
             });
         }
     }
 
     done[start._id] = true;
-    callback(start);
+    callback();
 }
 
 
 var generate = function(end) {
+    //if (end === null) return [];
     var paths = [];
-    if (!(end.hasOwnProperty('_parents')) || end._parents.length === 0) {
+    if (end._parents.length === 0) {
         paths = [ [ end ] ];
     } 
     else {
@@ -117,7 +130,6 @@ var generate = function(end) {
         }
     }
 
-    console.log('generate ' + end);
 
     return paths;
 }
@@ -189,13 +201,11 @@ var topk = function(pairs, k, callback) {
                 callback(top.list.slice(0, k));
             }
         });
-        // console.log(pair.from._id + ' , ' + pair.to._id);
         pair = pairs.next();
     }
 }
 
 var toroot = function(nodes, callback) {
-    console.log('toroot');
     var map = {
         check: function() {
             for (var i = 0; i < nodes.length; i++) {
@@ -259,16 +269,8 @@ var searchengine = function(query, callback) {
                 for (var i = 0; i < inodes.length; i++) {
                     ids.push(inodes[i].nodeId);
                 }
-                console.log('for ' + token + ' we got ');
-                console.log(inodes);
-                console.log(ids);
-                console.log();
-
                 Node.find({ _id: { $in: ids }}, function(err, nodes) {
                     finished[token] = true;
-                    console.log('for ' + token + ' we got ');
-                    console.log(nodes);
-                    console.log();
                     if (nodes.length > 0) results.push(nodes);
                     if (finished.check()) {
                         if (results.length == 0) callback([]);
