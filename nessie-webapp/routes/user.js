@@ -118,7 +118,7 @@ router.post('/create-upload', function(req, res, next) {
       function(uploads, callback) {
         var upload = new Upload({
           user: req.user.id,
-          status: 'Created Upload',
+          status: 'Upload Complete',
           name: fields.name,
           type: fields.type
         });
@@ -208,10 +208,10 @@ router.post('/create-upload', function(req, res, next) {
         });
       }*/
       ], function(err, result) {
-        /*if (err) {
+        if (err) {
           return res.json({message: err});
         }
-        return res.json({message: 'Success'});*/
+        return res.json({message: 'Success'});
       });
   });
 });

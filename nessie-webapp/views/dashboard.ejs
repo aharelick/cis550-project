@@ -55,7 +55,7 @@
               '<td>' + upload.name + '</td>' +
               '<td>' + upload.type + '</td>' +
               '<td>' + (upload.public ? 'Public' : 'Private') + '</td>' +
-              '<td class="' + (upload.status === 'Uploaded' ? 'positive' : 'warning') + '">' + upload.status + '</td>' +
+              '<td class="' + (upload.status === 'Upload Complete' ? 'warning' : 'positive') + '">' + upload.status + '</td>' +
               '<td><a href="/user/edit-upload/' + upload._id + '"class="ui teal button">Edit</a></td>' +
               '</tr>')
           });

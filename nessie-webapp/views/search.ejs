@@ -111,13 +111,13 @@
         nodes[i].color = nodes[i].center ? '#333' : '#666';
       }
       s.refresh();
-      s.startForceAtlas2();
+      //s.startForceAtlas2();
 
       //When a node is double clicked, the document is opened
-      s.bind('doubleClickNode', function(e) {
-          console.log(e.data.node.docID);
-          window.open(e.data.node.docID);
-      });
+//      s.bind('doubleClickNode', function(e) {
+//          console.log(e.data.node.docID);
+//          window.open(e.data.node.docID);
+//      });
 
       //Uncomment to make the quivering stop
       //s.stopForceAtlas2();
