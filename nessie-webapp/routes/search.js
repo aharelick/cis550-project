@@ -4,43 +4,8 @@ var InvertedNode = require('../models/InvertedNode.js');
 var NUM_RESULTS = 10;
 var MAX_DEPTH = 10;
 
-<<<<<<< HEAD
-var getPaths = function(start, end) {
-    start._depth   = 0;
-    start._parents = [];
-    queue = [ start ];
-    seen  = [];
 
-    while (queue.length > 0) {
-        var node = queue.shift();
-        seen.push(node);
-
-        for (var i = 0; i < node.neighbors.length; i++) {
-            adj = node.neighbors[i];
-            if (!(adj.hasOwnProperty('_depth'))) {
-                adj._depth   = node._depth + 1;
-                adj._parents = [ node ];
-                queue.push(adj);
-            } else if (adj._depth === node._depth + 1) {
-                adj._parents.push(node);
-            }
-        }
-    }
-
-    if (end.hasOwnProperty('_depth')) paths = generate(end);
-    else                              paths = [ [ ] ];
-
-    for (var i = 0; i < seen.length; i++) {
-        delete seen[i]['_depth'];
-        delete seen[i]['_parents'];
-    }
-    return paths;
-}
-
-var MAX_DEPTH = 10;
-=======
 // search for minimal paths from start to end
->>>>>>> 5068b379117f0563157290559520a21d34ee7932
 var search = function(start, end, callback) {
     if (end.neighbors.indexOf(start._id) != -1) {
         callback([[ start, end ]]);
@@ -95,7 +60,7 @@ var dfs = function(start, last, seen, done, callback) {
         callback();
         return;
     }
-        
+
     for (var i = 0; i < start.neighbors.length; i++) {
 
         done[start.neighbors[i]] = false;
@@ -120,12 +85,12 @@ var dfs = function(start, last, seen, done, callback) {
 }
 
 
-// generates path from dfs 
+// generates path from dfs
 var generate = function(end) {
     var paths = [];
     if (end._parents.length === 0) {
         paths = [ [ end ] ];
-    } 
+    }
     else {
         for (var i = 0; i < end._parents.length; i++) {
             var stubs = generate(end._parents[i]);
@@ -140,7 +105,7 @@ var generate = function(end) {
     return paths;
 }
 
-// produces an iterator to find all possible path endpoints 
+// produces an iterator to find all possible path endpoints
 var cartesian = function(nodes) {
     return {
         nodes: nodes,
@@ -176,7 +141,7 @@ var cartesian = function(nodes) {
                     }
                 }
             } while (this.to === this.from && this.from < nodes.length);
-            
+
             return { 'from': a, 'to': b };
         }
     }
@@ -292,7 +257,7 @@ var searchengine = function(query, callback) {
         }
     }
     for (var i = 0; i < tokens.length; i++) {
-        InvertedNode.find({ term: tokens[i] }, 
+        InvertedNode.find({ term: tokens[i] },
                           assemble(tokens[i], results, finished, callback));
     }
 }

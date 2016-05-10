@@ -11,6 +11,9 @@ var flash = require('connect-flash');
 var expressValidator = require('express-validator');
 var aws = require('aws-sdk');
 require('./config/pass')(passport);
+var kue = require('kue');
+var url = require('url');
+//var redis = require('redis');
 
 var unauthenticatedRoutes = require('./routes/unauthenticated');
 var userRoutes = require('./routes/user');
@@ -34,6 +37,15 @@ if (app.get('env') === 'development') {
     SESSION_SECRET: process.env.SESSION_SECRET,
   }
 }
+
+//kue.redis.createClient = function() {
+//  var redisUrl = url.parse(config.REDIS_URL);
+//  var client = kue.redis.createClient(redisUrl.port, redisUrl.hostname);
+//  if (redisUrl.auth) {
+//    client.auth(redisUrl.auth.split(":")[1]);
+//  }
+//  return client;
+//};
 
 /**
  * Connect to MongoDB.

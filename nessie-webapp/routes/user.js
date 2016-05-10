@@ -11,9 +11,9 @@ var formidable = require('formidable');
 var xml2js     = require('xml2js');
 var Converter  = require("csvtojson").Converter;
 var async  = require('async');
-var Worker = require('webworker-threads').Worker;
+var kue = require('kue');
 
-var w = new Worker('./routes/worker.js');
+var jobs = kue.createQueue();
 
 
 /* GET index page. */
@@ -105,7 +105,7 @@ router.post('/create-upload', function(req, res, next) {
       function(callback) {
         Upload.find({name: fields.name}, function(err, uploads) {
           if (uploads.length > 0) {
-            callback("File already existed in database");
+            return callback('File already exists.');
           } else {
             callback(null, uploads);
           }
@@ -134,7 +134,22 @@ router.post('/create-upload', function(req, res, next) {
         var invertedNodes = [];
         var parentNode = addNode(fields.name, null, docId, nodes, invertedNodes);
         createNodes(contents, parentNode, docId, nodes, invertedNodes);
-        w.postMessage({nodes: nodes});
+        
+        var job = jobs.create('crawl', {
+          nodes: nodes,
+          invertedNodes: invertedNodes
+        });
+
+        job.on('complete', function(){
+          console.log("Job complete");
+        }).on('failed', function(){
+          console.log("Job failed");
+        }).on('progress', function(progress){
+          console.log('job #' + job.id + ' ' + progress + '% complete');
+        });
+
+        job.save();
+
         callback(null, nodes, invertedNodes);
       }/*,
       // For each node start the next pipeline
