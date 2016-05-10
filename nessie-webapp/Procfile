@@ -1,2 +1,2 @@
 web: npm start
-worker: node worker.js
+worker: pm2 start worker.js -i 4
