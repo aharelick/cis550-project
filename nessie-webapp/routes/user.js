@@ -14,6 +14,7 @@ var async  = require('async');
 var kue = require('kue');
 
 var jobs = kue.createQueue();
+jobs.watchStuckJobs(10000);
 
 
 /* GET index page. */
@@ -132,23 +133,25 @@ router.post('/create-upload', function(req, res, next) {
       function(docId, callback) {
         var nodes = [];
         var invertedNodes = [];
-        var parentNode = addNode(fields.name, null, docId, nodes, invertedNodes);
-        createNodes(contents, parentNode, docId, nodes, invertedNodes);
+        var parentNode = addNode(fields.name, null, docId, nodes);
+        createNodes(contents, parentNode, docId, nodes);
         
-        var job = jobs.create('crawl', {
-          nodes: nodes,
-          invertedNodes: invertedNodes
-        });
+        var numWorkers = 5;
+        var nodeLists = [];
+        for (var i = 0; i < numWorkers; i++) {
+          nodeLists.push([]);
+        }
+        for (var i = 0; i < nodes.length; i++) {
+          nodeLists[i%numWorkers].push(nodes[i]);
+        }
 
-        job.on('complete', function(){
-          console.log("Job complete");
-        }).on('failed', function(){
-          console.log("Job failed");
-        }).on('progress', function(progress){
-          console.log('job #' + job.id + ' ' + progress + '% complete');
-        });
-
-        job.save();
+        var workerJobs = [];
+        for (var i = 0; i < numWorkers; i++) {
+          var job = jobs.create('crawl', {
+            nodes:nodeLists[i]
+          }).save();
+        }
+        
 
         callback(null, nodes, invertedNodes);
       }/*,
@@ -215,23 +218,23 @@ router.post('/create-upload', function(req, res, next) {
 
 
 // Iterate through the dataItem and add all entries to an inverted index
-var createNodes = function(value, parent, fileId, nodes, invertedNodes) {
+var createNodes = function(value, parent, fileId, nodes) {
   if (Array.isArray(value)) {
     value.forEach(function(currentVal, index) {
-      createNodes(currentVal, parent, fileId, nodes, invertedNodes);
+      createNodes(currentVal, parent, fileId, nodes);
     });
   }
   else if (typeof value === 'object' && value != null) {
     Object.keys(value).forEach(function(key, index, array) {
-      var node = addNode(key, parent, fileId, nodes, invertedNodes);
-      createNodes(value[key], node, fileId, nodes, invertedNodes);
+      var node = addNode(key, parent, fileId, nodes);
+      createNodes(value[key], node, fileId, nodes);
     });
   } else {
-    addNode(value, parent, fileId, nodes, invertedNodes);
+    addNode(value, parent, fileId, nodes);
   }
 }
 
-var addNode = function(key, parent, fileId, nodes, invertedNodes) {
+var addNode = function(key, parent, fileId, nodes) {
   key = '' + key;
   var node = new Node({
     key: key.toLowerCase(),
@@ -245,15 +248,29 @@ var addNode = function(key, parent, fileId, nodes, invertedNodes) {
     parent.neighbors.push(node._id);
   }
 
-  key.split(' ').forEach(function(term, index) {
+  /*key.split(' ').forEach(function(term, index) {
     var invertedNode = new InvertedNode({
       term: term.toLowerCase(),
       nodeId: node._id
     });
     invertedNodes.push(invertedNode);
-  });
+  });*/
 
   nodes.push(node);
+  if (nodes.length % 20000 == 0) {
+
+    console.log(nodes);
+    var job = jobs.create('crawl', {
+      nodes: nodes
+    }).save(function(err) {
+      console.log(err);
+    });
+
+    setTimeout(function() {
+      console.log("Wait");
+    }, 2000);
+  }
+
   return node;
 }
 

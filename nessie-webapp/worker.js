@@ -31,7 +31,6 @@ var jobs = kue.createQueue();
 // see https://github.com/learnBoost/kue/ for how to do more than one job at a time
 jobs.process('crawl', function(job, done) {
 	var nodes = job.data.nodes;
-	var invertedNodes = job.data.invertedNodes;
 	async.eachSeries(nodes, function(node, callbackTwo) {
 	    async.waterfall([
 	      // Get all of the inverted neighbors of this node
@@ -76,7 +75,6 @@ jobs.process('crawl', function(job, done) {
 	        callbackThree(null);
 	      }], function(err, result) {
 	        Node.insertMany(nodes);
-	        InvertedNode.insertMany(invertedNodes);
 	        callbackTwo(err);
 	      });
 	}, function(err) {
