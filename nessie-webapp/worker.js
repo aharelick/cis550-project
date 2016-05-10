@@ -4,32 +4,28 @@ var async = require('async');
 var InvertedNode = require('./models/InvertedNode');
 var Node = require('./models/Node');
 var mongoose = require('mongoose');
-//var redis = require('redis');
-config = require('./config/config');
+var redis = require('kue/node_modules/redis');
 
 
-mongoose.connect(config.MONGODB_URI);
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/nessie');
 mongoose.connection.on('error', function() {
   console.error('MongoDB Connection Error. Please make sure that MongoDB is running.');
 });
-/**
- * Load environment variables.
- */
 
 
-//kue.redis.createClient = function() {
-//  var redisUrl = url.parse(config.REDIS_URL);
-//  var client = kue.redis.createClient(redisUrl.port, redisUrl.hostname);
-//  if (redisUrl.auth) {
-//    client.auth(redisUrl.auth.split(":")[1]);
-//  }
-//  return client;
-//};
+kue.redis.createClient = function() {
+  var redisUrl = url.parse(process.env.REDIS_URL || 'redis://localhost:6379');
+  var client = redis.createClient(redisUrl.port, redisUrl.hostname);
+  if (redisUrl.auth) {
+    client.auth(redisUrl.auth.split(":")[1]);
+  }
+  return client;
+};
 
 var jobs = kue.createQueue();
 
 // see https://github.com/learnBoost/kue/ for how to do more than one job at a time
-jobs.process('crawl', function(job, done) {
+jobs.process('upload', function(job, done) {
 	var nodes = job.data.nodes;
 	var invertedNodes = job.data.invertedNodes;
 	async.eachSeries(nodes, function(node, callbackTwo) {

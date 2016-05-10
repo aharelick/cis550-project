@@ -134,8 +134,8 @@ router.post('/create-upload', function(req, res, next) {
         var invertedNodes = [];
         var parentNode = addNode(fields.name, null, docId, nodes, invertedNodes);
         createNodes(contents, parentNode, docId, nodes, invertedNodes);
-        
-        var job = jobs.create('crawl', {
+
+        var job = jobs.create('upload', {
           nodes: nodes,
           invertedNodes: invertedNodes
         });
