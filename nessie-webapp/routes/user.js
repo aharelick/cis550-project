@@ -11,6 +11,9 @@ var formidable = require('formidable');
 var xml2js     = require('xml2js');
 var Converter  = require("csvtojson").Converter;
 var async  = require('async');
+var Worker = require('webworker-threads').Worker;
+
+var w = new Worker('./routes/worker.js');
 
 
 /* GET index page. */
@@ -102,7 +105,7 @@ router.post('/create-upload', function(req, res, next) {
       function(callback) {
         Upload.find({name: fields.name}, function(err, uploads) {
           if (uploads.length > 0) {
-            return callback(err);
+            callback("File already existed in database");
           } else {
             callback(null, uploads);
           }
@@ -131,11 +134,12 @@ router.post('/create-upload', function(req, res, next) {
         var invertedNodes = [];
         var parentNode = addNode(fields.name, null, docId, nodes, invertedNodes);
         createNodes(contents, parentNode, docId, nodes, invertedNodes);
+        w.postMessage({nodes: nodes});
         callback(null, nodes, invertedNodes);
-      },
+      }/*,
       // For each node start the next pipeline
       function(nodes, invertedNodes, callback) {
-        async.each(nodes, function(node, callbackTwo) {
+        async.eachSeries(nodes, function(node, callbackTwo) {
           async.waterfall([
             // Get all of the inverted neighbors of this node
             async.apply(function(node, callbackThree) {
@@ -169,7 +173,6 @@ router.post('/create-upload', function(req, res, next) {
             function(node, neighbors, callbackThree) {
               console.log('Adding neightbors to the adjacency list');
               neighbors.forEach(function(neighbor, index) {
-                console.log(neighbor);
                 if (!(neighbor._id in node.neighbors) && !(node._id in neighbor.neighbors)) {
                   node.neighbors.push(neighbor._id);
                   neighbor.neighbors.push(node._id);
@@ -185,13 +188,12 @@ router.post('/create-upload', function(req, res, next) {
         }, function(err) {
           callback(err);
         });
-      }
-      ], 
-      function(err, result) {
-        if (err) {
-          return res.json({message: 'Failure to upload file'});
+      }*/
+      ], function(err, result) {
+        /*if (err) {
+          return res.json({message: err});
         }
-        return res.json({message: 'Success'});
+        return res.json({message: 'Success'});*/
       });
   });
 });
