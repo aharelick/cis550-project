@@ -194,9 +194,46 @@ var topk = function(pairs, k, callback) {
     }
 }
 
+var toroot = function(nodes, callback) {
+    console.log('toroot');
+    var map = {
+        check: function() {
+            for (var i = 0; i < nodes.length; i++) {
+                if (this[nodes[i]._id] == false) return false;
+            }
+            return true;
+        }
+    };
+    for (var i = 0; i < nodes.length; i++) {
+        map[nodes[i]._id] = false;
+    }
+
+    var up = function(end, path, base) {
+        path.push(end);
+        if (end.parent == null) {
+            map[base] = path;
+            if (map.check()) {
+                var results = [];
+                for (var i = 0; i < nodes.length; i++) {
+                    results.push(map[nodes[i]._id]);
+                }
+                callback(results)
+            }
+        } else {
+            Node.findOne({ _id: end.parent }, function(err, parent) {
+                up(parent, path, base);
+            });
+        }
+    }
+
+    for (var i = 0; i < nodes.length; i++) {
+        up(nodes[i], [], nodes[i]._id);
+    }
+}
 
 var searchengine = function(query, callback) {
     var tokens = query.split(/[ ,\t\n\r]+/)
+
     var results = [];
     var finished = {
         init: function() {
@@ -235,14 +272,13 @@ var searchengine = function(query, callback) {
                     if (nodes.length > 0) results.push(nodes);
                     if (finished.check()) {
                         if (results.length == 0) callback([]);
-                        console.log(results);
-                        topk(cartesian(results), NUM_RESULTS, callback);
+                        if (results.length == 1) toroot(results[0], callback);
+                        else topk(cartesian(results), NUM_RESULTS, callback);
                     }
                 });
             }
         }
     }
-
     for (var i = 0; i < tokens.length; i++) {
         InvertedNode.find({ term: tokens[i] }, 
                           assemble(tokens[i], results, finished, callback));
