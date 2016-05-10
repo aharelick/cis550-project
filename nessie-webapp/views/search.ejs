@@ -39,11 +39,11 @@
       <div id="sigma-container"></div>
     </div>
   </main>
-  <script src="/sigma/sigma.js"></script>
+  <script src="/sigma/sigma.min.js"></script>
   <script src="/sigma/plugins/sigma.parsers.json.min.js"></script>
   <script src="/sigma/plugins/sigma.layout.forceAtlas2.min.js"></script>
   <script>
-    
+
     $('#search_input').on('input', function() {
       var input = $('#search_input').val();
       if (input) {
@@ -72,7 +72,6 @@
           console.log(data);
           $('#sigma-container').empty();
           renderGraph(data);
-
         },
         error: function(jqXHR, textStatus, err) {
           console.log(err);
@@ -81,7 +80,7 @@
     }
 
     var renderGraph = function(data) {
-      if (data.message != null) {
+      if (data.length == 0) {
         $('#sigma-container').text("No results were found");
       }
       console.log("rendering....");
@@ -113,16 +112,14 @@
       s.refresh();
       s.startForceAtlas2();
 
-      function onClick(event) {
-        window.console.log("clicked!");
-        window.console.log(event)
-      } 
-
       //When a node is double clicked, the document is opened
       s.bind('doubleClickNode', function(e) {
           console.log(e.data.node.docID);
           window.open(e.data.node.docID);
       });
+
+      //Uncomment to make the quivering stop
+      //s.stopForceAtlas2();
     }
 
     var translate = function(data) {
@@ -154,7 +151,9 @@
             edgeCount++;
             edge.source = prevId;
             edge.target = currID;
-            formattedObj.edges.push(edge);
+            if (!edgeExists(prevId, currID, formattedObj)) {
+                formattedObj.edges.push(edge);
+            }
           }
 
           //Update the previous pointer in path
@@ -175,6 +174,15 @@
         }
       }
       return false;
+    }
+
+    var edgeExists = function(from, to, formattedObj) {
+        for (var i = 0; i < formattedObj.edges.length; i++) {
+            var edge = formattedObj.edges[i];
+            if (edge.source == from && edge.target == to) return true;
+            if (edge.target == from && edge.source == to) return true;
+        }
+        return false;
     }
 
 
