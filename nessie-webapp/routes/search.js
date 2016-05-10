@@ -35,7 +35,7 @@ var getPaths = function(start, end) {
     return paths;
 }
 
-var MAX_DEPTH = 20;
+var MAX_DEPTH = 10;
 var search = function(start, end, callback) {
     var seen = [];
     var done = [];

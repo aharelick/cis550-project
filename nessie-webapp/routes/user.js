@@ -10,7 +10,7 @@ var aws = require('aws-sdk');
 var formidable = require('formidable');
 var xml2js     = require('xml2js');
 var Converter  = require("csvtojson").Converter;
-var search     = require('./search.js');
+var async  = require('async');
 
 
 /* GET index page. */
@@ -97,12 +97,19 @@ router.post('/create-upload', function(req, res, next) {
     }
 
     // Look for the document in the database, if it isn't already present then add it
-    Upload.find({name: fields.name}, function(err, uploads) {
-      if (uploads.length > 0) {
-        console.log(util.inspect(uploads, false, null));
-        return res.json({message: 'Item with given filename is already in DB'})
-      } else {
-
+    async.waterfall([
+      // Check if the upload already exists in the db
+      function(callback) {
+        Upload.find({name: fields.name}, function(err, uploads) {
+          if (uploads.length > 0) {
+            return callback(err);
+          } else {
+            callback(null, uploads);
+          }
+        });
+      },
+      // Save the Upload
+      function(uploads, callback) {
         var upload = new Upload({
           user: req.user.id,
           status: 'Created Upload',
@@ -111,32 +118,81 @@ router.post('/create-upload', function(req, res, next) {
         });
         upload.save(function(err, writeResult) {
           if (err) {
-            console.log(err);
-            return res.sendStatus(500);
-          } else {
-
-            var nodes = [];
-            var invertedNodes = [];
-            var parentNode = addNode(fields.name, null, writeResult._id, nodes, invertedNodes);
-            createNodes(contents, parentNode, writeResult._id, nodes, invertedNodes);
-            createLinks(nodes);
-            Node.insertMany(nodes, function(err, writeResult) {
-              if (err) {
-                return res.sendStatus(500);
-              }
-              InvertedNode.insertMany(invertedNodes, function(err, writeResult) {
-                if (err) {
-                  console.log(err);
-                  return res.sendStatus(500);
-                } else {
-                  return res.json({success:true})
-                }
-              })
-            });
+            return callback(err);
+          }
+          else {
+            callback(null, writeResult._id);
           }
         });
+      },
+      // Create the nodes
+      function(docId, callback) {
+        var nodes = [];
+        var invertedNodes = [];
+        var parentNode = addNode(fields.name, null, docId, nodes, invertedNodes);
+        createNodes(contents, parentNode, docId, nodes, invertedNodes);
+        callback(null, nodes, invertedNodes);
+      },
+      // For each node start the next pipeline
+      function(nodes, invertedNodes, callback) {
+        async.each(nodes, function(node, callbackTwo) {
+          async.waterfall([
+            // Get all of the inverted neighbors of this node
+            async.apply(function(node, callbackThree) {
+              console.log('Getting inverted neighbors');
+              terms = node.key.split(' ');
+              InvertedNode.find({term: {$in: terms}}, function(err, invertedNeighbors) {
+                if (err) {
+                  return callbackThree(err);
+                } else {
+                  callbackThree(null, node, invertedNeighbors);
+                }
+              });
+            }, node),
+            // Using the inverted neighbor ids, get the neighbor nodes
+            function(node, invertedNeighbors, callbackThree) {
+              console.log('Getting neighbors');
+              neighborIds = [];
+              invertedNeighbors.forEach(function(invertedNeighbor, index) {
+                neighborIds.push(invertedNeighbor.nodeId);
+              });
+
+              Node.find({_id: {$in: neighborIds}}, function(err, neighbors) {
+                if (err) {
+                  return callbackThree(err);
+                } else {
+                  callbackThree(null, node, neighbors)
+                }
+              });
+            },
+            // Add neighbors to the adjacency lists
+            function(node, neighbors, callbackThree) {
+              console.log('Adding neightbors to the adjacency list');
+              neighbors.forEach(function(neighbor, index) {
+                console.log(neighbor);
+                if (!(neighbor._id in node.neighbors) && !(node._id in neighbor.neighbors)) {
+                  node.neighbors.push(neighbor._id);
+                  neighbor.neighbors.push(node._id);
+                  neighbor.save();
+                }
+              })
+              callbackThree(null);
+            }], function(err, result) {
+              Node.insertMany(nodes);
+              InvertedNode.insertMany(invertedNodes);
+              callbackTwo(err);
+            });
+        }, function(err) {
+          callback(err);
+        });
       }
-    });
+      ], 
+      function(err, result) {
+        if (err) {
+          return res.json({message: 'Failure to upload file'});
+        }
+        return res.json({message: 'Success'});
+      });
   });
 });
 
@@ -184,31 +240,6 @@ var addNode = function(key, parent, fileId, nodes, invertedNodes) {
   return node;
 }
 
-var createLinks = function(nodes) {
-  nodes.forEach(function(node, index) {
-    terms = node.key.split(' ');
-    terms.forEach(function(term, index) {
-      InvertedNode.find({term: term}, function(err, invertedNeighbors) {
-        neighborIds = [];
-        invertedNeighbors.forEach(function(invertedNeighbor, index) {
-          neighborIds.push(invertedNeighbor.nodeId);
-        })
-        
-        Node.find({_id: {$in: neighborIds}}, function(err, neighbors) {
-          neighbors.forEach(function(neighbor, index) {
-            if (!(neighbor._id in node.neighbors) && !(node._id in neighbor.neighbors)) {
-              node.neighbors.push(neighbor._id);
-              neighbor.neighbors.push(node._id);
-            }
-          });
-          Node.insertMany(neighbors, function(err, writeResult) {
-            console.log("Success");
-          });
-        });
-      });
-    });
-  });
-}
 
 router.post('/update-upload-status', function(req, res, next) {
   // TODO: validate these params, make sure user is editing own upload
