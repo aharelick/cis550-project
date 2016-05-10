@@ -2,40 +2,9 @@ var Node         = require('../models/Node.js');
 var InvertedNode = require('../models/InvertedNode.js');
 
 var NUM_RESULTS = 10;
-
-var getPaths = function(start, end) {
-    start._depth   = 0;
-    start._parents = [];
-    queue = [ start ];
-    seen  = [];
-
-    while (queue.length > 0) {
-        var node = queue.shift();
-        seen.push(node);
-
-        for (var i = 0; i < node.neighbors.length; i++) {
-            adj = node.neighbors[i];
-            if (!(adj.hasOwnProperty('_depth'))) {
-                adj._depth   = node._depth + 1;
-                adj._parents = [ node ];
-                queue.push(adj);
-            } else if (adj._depth === node._depth + 1) {
-                adj._parents.push(node);
-            }
-        }
-    }
-
-    if (end.hasOwnProperty('_depth')) paths = generate(end);
-    else                              paths = [ [ ] ];
-
-    for (var i = 0; i < seen.length; i++) {
-        delete seen[i]['_depth'];
-        delete seen[i]['_parents'];
-    }
-    return paths;
-}
-
 var MAX_DEPTH = 10;
+
+// search for minimal paths from start to end
 var search = function(start, end, callback) {
     if (end.neighbors.indexOf(start._id) != -1) {
         callback([[ start, end ]]);
@@ -65,6 +34,7 @@ var search = function(start, end, callback) {
     });
 }
 
+// limited depth-first search used by search
 var dfs = function(start, last, seen, done, callback) {
     seen[start._id] = start;
 
@@ -114,8 +84,8 @@ var dfs = function(start, last, seen, done, callback) {
 }
 
 
+// generates path from dfs 
 var generate = function(end) {
-    //if (end === null) return [];
     var paths = [];
     if (end._parents.length === 0) {
         paths = [ [ end ] ];
@@ -134,6 +104,7 @@ var generate = function(end) {
     return paths;
 }
 
+// produces an iterator to find all possible path endpoints 
 var cartesian = function(nodes) {
     return {
         nodes: nodes,
@@ -175,6 +146,7 @@ var cartesian = function(nodes) {
     }
 }
 
+// get k shortest paths between the pairs
 var topk = function(pairs, k, callback) {
     var top = {
         list: [],
@@ -205,6 +177,7 @@ var topk = function(pairs, k, callback) {
     }
 }
 
+// finds path from nodes to their roots
 var toroot = function(nodes, callback) {
     var map = {
         check: function() {
@@ -241,6 +214,7 @@ var toroot = function(nodes, callback) {
     }
 }
 
+// takes query and redirectrs to appropriate method
 var searchengine = function(query, callback) {
     var tokens = query.split(/[ ,\t\n\r]+/)
 
