@@ -2,7 +2,7 @@
 # Nessie
 > Data lake management system.
 
-The final project for CIS550 (Database and Information Systems) at the University of Pennsylvania.
+The final project for CIS550 (Database and Information Systems) at the University of Pennsylvania. The code we deployed on heroku and used in our demo can be found on the [deployed](https://github.com/aharelick/cis550-project/tree/deployed) branch.
 
 
 ## Running the Web Interface
@@ -10,6 +10,20 @@ The final project for CIS550 (Database and Information Systems) at the Universit
 - `cd` into the `nessie` folder just inside the root of the project
 ```zsh
 $ npm install
+```
+- Make sure MongoDB and Redis are running locally
+- Create a config file named /nessie-webapp-config/config.js from the template below
+```javascript
+
+```
+module.exports = {
+  MONGODB_URI: 'mongodb://localhost:27017/nessie',
+  SESSION_SECRET: 'INSERT SECRET KEY HERE',
+  AWS_ACCESS_KEY_ID: 'INSERT AWS ACCESS KEY ID HERE',
+  AWS_SECRET_ACCESS_KEY: 'INSERT AWS SECRET ACCESS KEY HERE',
+  REDIS_URL: 'redis://localhost:6379'
+};
+```zsh
 $ npm start
 ```
 - Navigate to `localhost:3000` in a browser
