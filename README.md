@@ -23,7 +23,7 @@ module.exports = {
 };
 ```
 
-`$ npm start` or `$ npm run dev` (uses [nodemon](https://github.com/remy/nodemon))
+- `$ npm start` or `$ npm run dev` (uses [nodemon](https://github.com/remy/nodemon))
 
 - Navigate to `localhost:3000` in a browser
 
