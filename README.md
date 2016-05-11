@@ -7,15 +7,13 @@ The final project for CIS550 (Database and Information Systems) at the Universit
 
 ## Running the Web Interface
 - Clone/download the project
-- `cd` into the `nessie` folder just inside the root of the project
+- `cd` into the `nessie-webapp` folder just inside the root of the project
 ```zsh
 $ npm install
 ```
 - Make sure MongoDB and Redis are running locally
 - Create a config file named /nessie-webapp-config/config.js from the template below
 ```javascript
-
-```
 module.exports = {
   MONGODB_URI: 'mongodb://localhost:27017/nessie',
   SESSION_SECRET: 'INSERT SECRET KEY HERE',
@@ -23,9 +21,9 @@ module.exports = {
   AWS_SECRET_ACCESS_KEY: 'INSERT AWS SECRET ACCESS KEY HERE',
   REDIS_URL: 'redis://localhost:6379'
 };
-```zsh
-$ npm start
-```
+
+`$ npm start` or `$ npm run dev` (uses [nodemon](https://github.com/remy/nodemon))
+
 - Navigate to `localhost:3000` in a browser
 
 
