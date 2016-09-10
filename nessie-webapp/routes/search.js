@@ -1,9 +1,8 @@
 var Node         = require('../models/Node.js');
 var InvertedNode = require('../models/InvertedNode.js');
 
-var NUM_RESULTS = 10;
-var MAX_DEPTH = 10;
-
+const numResults = 10;
+var maxDepth = 10;
 
 // search for minimal paths from start to end
 var search = function(start, end, callback) {
@@ -44,7 +43,7 @@ var dfs = function(start, last, seen, done, callback) {
     else              depth = 0;
 
 
-    if (depth === MAX_DEPTH) {
+    if (depth === maxDepth) {
         done[start._id] = true;
         callback();
         return;
@@ -250,7 +249,7 @@ var searchengine = function(query, callback) {
                     if (finished.check()) {
                         if (results.length == 0) callback([]);
                         if (results.length == 1) toroot(results[0], callback);
-                        else topk(cartesian(results), NUM_RESULTS, callback);
+                        else topk(cartesian(results), numResults, callback);
                     }
                 });
             }

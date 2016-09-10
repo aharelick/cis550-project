@@ -1,3 +1,5 @@
+'use strict';
+
 var fs = require('fs');
 var util = require('util');
 var express = require('express');
@@ -6,18 +8,9 @@ var User = require('../models/User');
 var Upload = require('../models/Upload');
 var Node = require('../models/Node');
 var InvertedNode = require('../models/InvertedNode');
-var aws = require('aws-sdk');
 var formidable = require('formidable');
-var xml2js     = require('xml2js');
-var Converter  = require("csvtojson").Converter;
-var async  = require('async');
-var kue = require('kue');
 var search = require('./search.js');
-
-var jobs = kue.createQueue({
-  redis: process.env.REDIS_URL || 'redis://localhost:6379'
-});
-
+var flow = require('./flow.js');
 
 /* GET index page. */
 router.get('/', function(req, res, next) {
@@ -29,10 +22,11 @@ router.get('/dashboard', function(req, res, next) {
   return res.render('dashboard', { title: 'Nessie' });
 });
 
-
+/* GET search page */
 router.get('/search', function(req, res, next) {
-    return res.render('search', { title: 'Search' });
+  return res.render('search', { title: 'Search' });
 });
+
 router.post('/search', function(req, res, next) {
   var query = req.body.searchTerms;
   search(query, function(paths) {
@@ -40,97 +34,18 @@ router.post('/search', function(req, res, next) {
   });
 })
 
-
-router.get('/sign-s3', function(req, res, next) {
-  var uploadId = req.query.upload_id;
-  var bucketName = 'teamnessie';
-
-  Upload.findById(uploadId, function(err, upload) {
-    if (err) {
-      return res.sendStatus(500);
-    }
-    var s3 = new aws.S3();
-    var s3Options = {
-      Bucket: bucketName,
-      Key: req.user.id + '/' + upload.name,
-      ContentType: upload.type,
-      // TODO: do we want this to be public read
-      ACL: 'public-read'
-    };
-    s3.getSignedUrl('putObject', s3Options, function(err, data) {
-      if (err){
-        return res.sendStatus(500);
-      } else {
-        var return_data = {
-          signed_request: data,
-          url: 'https://'+ bucketName +'.s3.amazonaws.com/' + req.user.id + '/' + upload.name
-        };
-        upload.url = return_data.url;
-        upload.status = 'Created Signed URL';
-        upload.save(function(err) {
-          if (err) {
-            res.sendStatus(500);
-          }
-        });
-        return res.json(return_data);
-      }
-    });
-  });
-});
-
 router.post('/create-upload', function(req, res, next) {
-
-  // Create the tree and store it in Mongo
-  var form = new formidable.IncomingForm();
-  form.parse(req, function(err, fields, files) {
-    var contents;
-
-    // Parse the document and convert it to a json object
-    if (fields.type === 'application/json') {
-      contents = JSON.parse(fs.readFileSync(files.file.path));
-    }
-    else if (fields.type === 'text/xml') {
-      var parser = new xml2js.Parser({'attrkey': 'attrs'});
-      parser.parseString(fs.readFileSync(files.file.path, 'utf8'), function(err, result) {
-        contents = result;
-      })
-    }
-    else if (fields.type === 'text/csv') {
-      var converter = new Converter({});
-      converter.fromString(fs.readFileSync(files.file.path, 'utf8'), function(err,result){
-        contents = result;
-      });
-    }
+  flow.parseForm(req)
+  .then(flow.readFilePromise)
+  .then(flow.parseFileContents)
+  .then(flow.createFileUpload)
+  .then(flow.createGraph)
+  .finally(function() {
+    console.log('Callback hell avoided');
+  });
 
     // Look for the document in the database, if it isn't already present then add it
-    async.waterfall([
-      // Check if the upload already exists in the db
-      function(callback) {
-        Upload.find({name: fields.name}, function(err, uploads) {
-          if (uploads.length > 0) {
-            return callback('File already exists.');
-          } else {
-            callback(null, uploads);
-          }
-        });
-      },
-      // Save the Upload
-      function(uploads, callback) {
-        var upload = new Upload({
-          user: req.user.id,
-          status: 'Upload Complete',
-          name: fields.name,
-          type: fields.type
-        });
-        upload.save(function(err, writeResult) {
-          if (err) {
-            return callback(err);
-          }
-          else {
-            callback(null, writeResult._id);
-          }
-        });
-      },
+    /* async.waterfall([
       // Create the nodes
       function(docId, callback) {
         var nodes = [];
@@ -159,7 +74,7 @@ router.post('/create-upload', function(req, res, next) {
         InvertedNode.insertMany(invertedNodes);
 
         callback(null, nodes, invertedNodes);
-      }/*,
+      },
       // For each node start the next pipeline
       function(nodes, invertedNodes, callback) {
         async.eachSeries(nodes, function(node, callbackTwo) {
@@ -211,14 +126,15 @@ router.post('/create-upload', function(req, res, next) {
         }, function(err) {
           callback(err);
         });
-      }*/
+      }
       ], function(err, result) {
         if (err) {
           return res.json({message: err});
         }
         return res.json({message: 'Success'});
       });
-  });
+  
+    */
 });
 
 

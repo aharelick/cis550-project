@@ -1,3 +1,5 @@
+'use strict';
+
 var express = require('express');
 var path = require('path');
 var logger = require('morgan');
@@ -9,11 +11,8 @@ var mongoose = require('mongoose');
 var MongoStore = require('connect-mongo')(session);
 var flash = require('connect-flash');
 var expressValidator = require('express-validator');
-var aws = require('aws-sdk');
 require('./config/pass')(passport);
-var kue = require('kue');
 var url = require('url');
-var redis = require('kue/node_modules/redis');
 
 var unauthenticatedRoutes = require('./routes/unauthenticated');
 var userRoutes = require('./routes/user');
@@ -24,28 +23,18 @@ var app = express();
  * Load environment variables.
  */
 
-var config;
+var MONGODB_URI;
 if (app.get('env') === 'development') {
-  config = require('./config/config');
-  aws.config.update({
-    accessKeyId: config.AWS_ACCESS_KEY_ID,
-    secretAccessKey: config.AWS_SECRET_ACCESS_KEY
-  });
+  MONGODB_URI = "mongodb://localhost:27017/local";
 } else {
-  config = {
-    MONGODB_URI: process.env.MONGODB_URI,
-    SESSION_SECRET: process.env.SESSION_SECRET,
-    REDIS_URL: process.env.REDIS_URL
-  }
+  MONGODB_URI = process.env.MONGODB_URI
 }
-
 
 /**
  * Connect to MongoDB.
  */
-
-mongoose.connect(config.MONGODB_URI);
-mongoose.connection.on('error', function() {
+mongoose.connect(MONGODB_URI);
+mongoose.connection.on('error', function(e) {
   console.error('MongoDB Connection Error. Please make sure that MongoDB is running.');
 });
 
@@ -63,10 +52,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: new MongoStore({
-    url: config.MONGODB_URI,
+    mongooseConnection: mongoose.connection,
     autoReconnect: true
   }),
-  secret: config.SESSION_SECRET,
+  secret: 'secret'
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -127,6 +116,5 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
-
 
 module.exports = app;
